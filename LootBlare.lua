@@ -1,5 +1,5 @@
 ﻿-- The duration the frame will stay visible after the last roll
-local frame_shown_duration = 20
+local frame_shown_duration = 30
 
 --------------------------------------------------
 
@@ -34,6 +34,25 @@ local function ShowFrame(frame,duration)
 	frame:Show()
 end
 
+
+local function CreateCloseButton(frame)
+	-- Add a close button
+	local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+	closeButton:SetWidth(32) -- Button size
+	closeButton:SetHeight(32) -- Button size
+	closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5) -- Position at the top right
+
+	-- Set textures if you want to customize the appearance
+	closeButton:SetNormalTexture("Interface/Buttons/UI-Panel-MinimizeButton-Up")
+	closeButton:SetPushedTexture("Interface/Buttons/UI-Panel-MinimizeButton-Down")
+	closeButton:SetHighlightTexture("Interface/Buttons/UI-Panel-MinimizeButton-Highlight")
+
+	-- Hide the frame when the button is clicked
+	closeButton:SetScript("OnClick", function()
+			frame:Hide()
+	end)
+end
+
 local function CreateItemRollFrame()
 	local frame = CreateFrame("Frame", "ItemRollFrame", UIParent)
 	frame:SetWidth(145) -- Adjust size as needed
@@ -53,6 +72,7 @@ local function CreateItemRollFrame()
 	frame:RegisterForDrag("LeftButton") -- Only start dragging with the left mouse button
 	frame:SetScript("OnDragStart", function () frame:StartMoving() end)
 	frame:SetScript("OnDragStop", function () frame:StopMovingOrSizing() end)
+	CreateCloseButton(frame)
 	frame:Hide()
 
 	return frame
