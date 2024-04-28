@@ -3,5 +3,6 @@
 ## Author: Ehawne
 ## Version: 1.0
 ## Notes: Make loot rolls obvious
+## SavedVariables:FrameShownDuration
 
 LootBlare.lua
