@@ -118,10 +118,10 @@ local function GetColoredTextByQuality(text, qualityIndex)
   return string.format("%s%s|r", hex, text)
 end
 
-local function SetItemInfo(frame, itemLink)
+local function SetItemInfo(frame, itemLinkArg)
 
   if not frame.icon then InitItemInfo(frame) end
-  local itemName, itemLink, itemQuality, _, _, _, _, _, itemIcon = GetItemInfo(itemLink)
+  local itemName, itemLink, itemQuality, _, _, _, _, _, itemIcon = GetItemInfo(itemLinkArg)
   if not itemIcon then
     lb_print("Error reading item link.")
     return
@@ -222,6 +222,9 @@ local function HandleChatMessage(event, message, from)
            string.find(message,"seconds left to roll") then
             -- lb_print("cancel")
 						return
+				elseif string.find(message, " received ") then
+					itemRollFrame:Hide()
+					return
         end
         rollMessages = {}
         UpdateTextArea(itemRollFrame)
