@@ -1,0 +1,10 @@
+## Interface: 11200
+## Title: LootBlare
+# Author: Xckbucl, Big Thanks to Zernin from MLM
+## Version: 1.0
+# Notes: Eases the stresses of passing out loot.
+# DefaultState: Enabled
+# LoadOnDemand: 0
+# SavedVariables: MasterLootManagerSettings
+
+LootBlare.lua
