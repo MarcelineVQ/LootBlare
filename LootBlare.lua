@@ -12,25 +12,22 @@ local function tsize(t)
   if c > 0 then return c else return nil end
 end
 
-local timeElapsed = 0
-local function ResetTimer()
-  timeElapsed = 0
-end
+local function CheckItem(link)
+  ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE")
+  ItemRefTooltip:SetHyperlink(link)
 
-local function HideAfter(frame,duration,elapsed)
-  timeElapsed = timeElapsed + elapsed
-  if timeElapsed >= duration then
-    frame:Hide()
-    frame:SetScript("OnUpdate", nil)  -- Stop updating once the frame is hidden
-    ResetTimer()
+  if ItemRefTooltipTextLeft1 and ItemRefTooltipTextLeft1:IsVisible() then
+    local name = ItemRefTooltipTextLeft1:GetText()
+    ItemRefTooltip:Hide()
+
+    if name == (RETRIEVING_ITEM_INFO or "") then
+      return false
+    else
+      return true
+    end
   end
+  return false
 end
-
-local function ShowFrame(frame,duration)
-  frame:SetScript("OnUpdate", function() HideAfter(frame,duration,arg1) end)
-  frame:Show()
-end
-
 
 local function CreateCloseButton(frame)
   -- Add a close button
@@ -119,13 +116,13 @@ local function GetColoredTextByQuality(text, qualityIndex)
 end
 
 local function SetItemInfo(frame, itemLinkArg)
-
   if not frame.icon then InitItemInfo(frame) end
   local itemName, itemLink, itemQuality, _, _, _, _, _, itemIcon = GetItemInfo(itemLinkArg)
   if not itemIcon then
-    lb_print("Error reading item link.")
-    return
-  end -- If no item, skip setting up
+    frame.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+		frame.name:SetText("Unknown item, attempting to query...")
+		return
+  end
 
   frame.icon:SetTexture(itemIcon)
   frame.iconButton:SetNormalTexture(itemIcon)  -- Sets the same texture as the icon
@@ -135,7 +132,29 @@ local function SetItemInfo(frame, itemLinkArg)
   frame.itemLink = itemLink
 end
 
--- SetItemInfo(itemRollFrame, "item:19019") -- Thunderfury, for example
+local timeElapsed = 0
+local itemCheck = 0.5
+local times = 5
+local function ShowFrame(frame,duration,item)
+  frame:SetScript("OnUpdate", function()
+    timeElapsed = timeElapsed + arg1
+    itemCheck = itemCheck - arg1
+    if timeElapsed >= duration then
+      frame:Hide()
+      frame:SetScript("OnUpdate", nil)
+      timeElapsed = 0
+      itemCheck = 1.5
+      times = 3
+    end
+    if times > 0 and itemCheck < 0 and not CheckItem(item) then
+      times = times - 1
+    else
+      SetItemInfo(itemRollFrame,item)
+      times = 5
+    end
+  end)
+  frame:Show()
+end
 
 local function CreateTextArea(frame)
   local textArea = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -207,7 +226,7 @@ local function HandleChatMessage(event, message, from)
       if roller and roll then
           roll = tonumber(roll) -- Convert roll to a number
           table.insert(rollMessages, { roller = roller, roll = roll, msg = message })
-          ResetTimer()
+          timeElapsed = 0
           UpdateTextArea(itemRollFrame)
       end
     end
@@ -218,19 +237,20 @@ local function HandleChatMessage(event, message, from)
       if tsize(links) == 1 then
         if string.find(message, "^No one has need:") or
            string.find(message,"has been sent to") or
-           string.find(message,"Rolling Cancelled") or
-           string.find(message,"seconds left to roll") then
-            -- lb_print("cancel")
-						return
-				elseif string.find(message, " received ") then
+           string.find(message, " received ") then
 					itemRollFrame:Hide()
 					return
+        elseif string.find(message,"Rolling Cancelled") or -- usually a cancel is accidental in my experience
+				       string.find(message,"seconds left to roll") or
+							 string.find(message,"Rolling is now Closed") then
+          return
         end
         rollMessages = {}
         UpdateTextArea(itemRollFrame)
-        SetItemInfo(itemRollFrame,links[1])
-        ResetTimer()
-        ShowFrame(itemRollFrame,FrameShownDuration)
+        timeElapsed = 0
+        ShowFrame(itemRollFrame,FrameShownDuration,links[1])
+
+        -- SetItemInfo(itemRollFrame,links[1])
       end
     end
   elseif event == "ADDON_LOADED" and arg1 == "LootBlare" then
