@@ -1,4 +1,5 @@
-﻿
+﻿local weird_vibes_mode = true
+
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
 end
@@ -215,6 +216,13 @@ local function HandleChatMessage(event, message, from)
     if lootMethod == "master" then -- check if there is a loot master
       local links = ExtractItemLinksFromMessage(message)
       if tsize(links) == 1 then
+        if string.find(message, "^No one has need:") or
+           string.find(message,"has been sent to") or
+           string.find(message,"Rolling Cancelled") or
+           string.find(message,"seconds left to roll") then
+            -- lb_print("cancel")
+						return
+        end
         rollMessages = {}
         UpdateTextArea(itemRollFrame)
         SetItemInfo(itemRollFrame,links[1])
