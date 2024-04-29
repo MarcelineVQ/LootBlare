@@ -87,12 +87,18 @@ local function InitItemInfo(frame)
   iconButton:SetHeight(40) -- Size of the icon
   iconButton:SetPoint("TOP", frame, "TOP", 0, -10)
 
+  -- Create a FontString for the frame hide timer
+  local timerText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  timerText:SetPoint("CENTER", frame, "TOPLEFT", 30, -32)
+  timerText:SetFont(timerText:GetFont(), 20)
+
   -- Create a FontString for the item name
   local name = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   name:SetPoint("TOP", icon, "BOTTOM", 0, -10)
 
   frame.icon = icon
   frame.iconButton = iconButton
+  frame.timerText = timerText
   frame.name = name
   frame.itemLink = ""
 
@@ -116,12 +122,16 @@ local function GetColoredTextByQuality(text, qualityIndex)
 end
 
 local function SetItemInfo(frame, itemLinkArg)
-  if not frame.icon then InitItemInfo(frame) end
   local itemName, itemLink, itemQuality, _, _, _, _, _, itemIcon = GetItemInfo(itemLinkArg)
+  if not frame.icon then InitItemInfo(frame) end
+
+  -- if we know the item, and the quality isn't green+, don't show it
+  if itemName and itemQuality < 2 then return false end
   if not itemIcon then
     frame.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-		frame.name:SetText("Unknown item, attempting to query...")
-		return
+    frame.name:SetText("Unknown item, attempting to query...")
+    -- could be an item we want to see, try to show it
+    return true
   end
 
   frame.icon:SetTexture(itemIcon)
@@ -130,6 +140,7 @@ local function SetItemInfo(frame, itemLinkArg)
   frame.name:SetText(GetColoredTextByQuality(itemName,itemQuality))
 
   frame.itemLink = itemLink
+  return true
 end
 
 local timeElapsed = 0
@@ -139,6 +150,7 @@ local function ShowFrame(frame,duration,item)
   frame:SetScript("OnUpdate", function()
     timeElapsed = timeElapsed + arg1
     itemCheck = itemCheck - arg1
+    if frame.timerText then frame.timerText:SetText(format("%.1f", duration - timeElapsed)) end
     if timeElapsed >= duration then
       frame:Hide()
       frame:SetScript("OnUpdate", nil)
@@ -149,7 +161,8 @@ local function ShowFrame(frame,duration,item)
     if times > 0 and itemCheck < 0 and not CheckItem(item) then
       times = times - 1
     else
-      SetItemInfo(itemRollFrame,item)
+      -- try to set item info, if it's not a valid item or too low quality, hide
+      if not SetItemInfo(itemRollFrame,item) then frame:Hide() end
       times = 5
     end
   end)
@@ -197,7 +210,7 @@ local function ExtractItemLinksFromMessage(message)
   return itemLinks
 end
 
--- no good masterLooterRaidID always nil?
+-- no good, seems like masterLooterRaidID always nil?
 local function IsUnitMasterLooter(unit)
   local lootMethod, masterLooterPartyID, masterLooterRaidID = GetLootMethod()
   
@@ -238,11 +251,11 @@ local function HandleChatMessage(event, message, from)
         if string.find(message, "^No one has need:") or
            string.find(message,"has been sent to") or
            string.find(message, " received ") then
-					itemRollFrame:Hide()
-					return
+          itemRollFrame:Hide()
+          return
         elseif string.find(message,"Rolling Cancelled") or -- usually a cancel is accidental in my experience
-				       string.find(message,"seconds left to roll") or
-							 string.find(message,"Rolling is now Closed") then
+               string.find(message,"seconds left to roll") or
+               string.find(message,"Rolling is now Closed") then
           return
         end
         rollMessages = {}

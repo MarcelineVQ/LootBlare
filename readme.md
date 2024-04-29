@@ -1,10 +1,10 @@
 Loot Blare
 ===
 
-A frame that pops up and shows item and rolls when singular items are linked in Raid Warning.
+A frame that pops up and shows item and rolls when a single uncommon+ item is linked in Raid Warning.  
 
-Default frame duration to stay on screen without a new /roll occuring is 20 seconds, change with:  
-`/lootblare <number>`
+Default frame duration to stay on screen without a new /roll occuring is `20 seconds`, change with:  
+`/lootblare <number>`  
 
 ### The (moveable) frame in game:  
 ![LootBlare Frame](./lootblareframe.png)  
