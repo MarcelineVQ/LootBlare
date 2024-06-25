@@ -12,13 +12,15 @@ local function tsize(t)
   if c > 0 then return c else return nil end
 end
 
-local function CheckItem(link)
-  ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE")
-  ItemRefTooltip:SetHyperlink(link)
+local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
 
-  if ItemRefTooltipTextLeft1 and ItemRefTooltipTextLeft1:IsVisible() then
-    local name = ItemRefTooltipTextLeft1:GetText()
-    ItemRefTooltip:Hide()
+local function CheckItem(link)
+  discover:SetOwner(UIParent, "ANCHOR_PRESERVE")
+  discover:SetHyperlink(link)
+
+  if discoverTextLeft1 and discoverTooltipTextLeft1:IsVisible() then
+    local name = discoverTooltipTextLeft1:GetText()
+    discoverTooltip:Hide()
 
     if name == (RETRIEVING_ITEM_INFO or "") then
       return false
@@ -102,14 +104,16 @@ local function InitItemInfo(frame)
   frame.name = name
   frame.itemLink = ""
 
+  local tt = CreateFrame("GameTooltip", "CustomTooltip2", UIParent, "GameTooltipTemplate")
+
   -- Set up tooltip
   iconButton:SetScript("OnEnter", function()
-      GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
-      GameTooltip:SetHyperlink(frame.itemLink)
-      GameTooltip:Show()
+    tt:SetOwner(iconButton, "ANCHOR_RIGHT")
+    tt:SetHyperlink(frame.itemLink)
+    tt:Show()
   end)
   iconButton:SetScript("OnLeave", function()
-      GameTooltip:Hide()
+    tt:Hide()
   end)
 end
 
@@ -143,22 +147,22 @@ local function SetItemInfo(frame, itemLinkArg)
   return true
 end
 
-local timeElapsed = 0
-local itemCheck = 0.5
+local time_elapsed = 0
+local item_query = 0.5
 local times = 5
 local function ShowFrame(frame,duration,item)
   frame:SetScript("OnUpdate", function()
-    timeElapsed = timeElapsed + arg1
-    itemCheck = itemCheck - arg1
-    if frame.timerText then frame.timerText:SetText(format("%.1f", duration - timeElapsed)) end
-    if timeElapsed >= duration then
+    time_elapsed = time_elapsed + arg1
+    item_query = item_query - arg1
+    if frame.timerText then frame.timerText:SetText(format("%.1f", duration - time_elapsed)) end
+    if time_elapsed >= duration then
       frame:Hide()
       frame:SetScript("OnUpdate", nil)
-      timeElapsed = 0
-      itemCheck = 1.5
+      time_elapsed = 0
+      item_query = 1.5
       times = 3
     end
-    if times > 0 and itemCheck < 0 and not CheckItem(item) then
+    if times > 0 and item_query < 0 and not CheckItem(item) then
       times = times - 1
     else
       -- try to set item info, if it's not a valid item or too low quality, hide
@@ -239,7 +243,7 @@ local function HandleChatMessage(event, message, from)
       if roller and roll then
           roll = tonumber(roll) -- Convert roll to a number
           table.insert(rollMessages, { roller = roller, roll = roll, msg = message })
-          timeElapsed = 0
+          time_elapsed = 0
           UpdateTextArea(itemRollFrame)
       end
     end
@@ -260,7 +264,7 @@ local function HandleChatMessage(event, message, from)
         end
         rollMessages = {}
         UpdateTextArea(itemRollFrame)
-        timeElapsed = 0
+        time_elapsed = 0
         ShowFrame(itemRollFrame,FrameShownDuration,links[1])
 
         -- SetItemInfo(itemRollFrame,links[1])
