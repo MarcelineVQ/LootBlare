@@ -115,6 +115,14 @@ local function InitItemInfo(frame)
   iconButton:SetScript("OnLeave", function()
     tt:Hide()
   end)
+  iconButton:SetScript("OnClick", function()
+    if ( IsControlKeyDown() ) then
+      DressUpItemLink(frame.itemLink);
+    elseif ( IsShiftKeyDown() and ChatFrameEditBox:IsVisible() ) then
+      local itemName, itemLink, itemQuality, _, _, _, _, _, itemIcon = GetItemInfo(frame.itemLink)
+      ChatFrameEditBox:Insert(ITEM_QUALITY_COLORS[itemQuality].hex.."\124H"..itemLink.."\124h["..itemName.."]\124h"..FONT_COLOR_CODE_CLOSE);
+    end
+  end)
 end
 
 -- Function to return colored text based on item quality

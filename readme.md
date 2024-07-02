@@ -1,4 +1,4 @@
-Loot Blare
+Loot Blare 1.1
 ===
 
 A frame that pops up and shows item and rolls when a single uncommon+ item is linked in Raid Warning.  
