@@ -294,10 +294,14 @@ SLASH_LOOTBLARE1 = '/lootblare'
 -- Command handler
 SlashCmdList["LOOTBLARE"] = function(msg)
     local newDuration = tonumber(msg)
-    if newDuration and newDuration > 0 then
+    if newDuration then
+      if newDuration > 0 then
         FrameShownDuration = newDuration
         lb_print("Frame shown duration set to " .. newDuration .. " seconds.")
+      else
+        lb_print("Invalid duration. Please enter a number greater than 0.")
+      end
     else
-      lb_print("Invalid duration. Please enter a number greater than 0.")
+      ShowFrame(itemRollFrame,FrameShownDuration,"item:15723")
     end
 end
