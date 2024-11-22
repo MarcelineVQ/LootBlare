@@ -1,4 +1,4 @@
-Loot Blare 1.1.2
+Loot Blare 1.1.3
 ===
 
 A frame that pops up and shows item and rolls when a single uncommon+ item is linked in Raid Warning.  
@@ -12,3 +12,7 @@ Make the frame appear to move it with:
 ![LootBlare Frame](./lootblareframe.png)  
 
 * This addon is made by and for `Weird Vibes` of Turtle WoW.  
+
+changelog:
+
+1.1.3 -> Added MainSpec Button for rolling

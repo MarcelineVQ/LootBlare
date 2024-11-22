@@ -49,10 +49,32 @@ local function CreateCloseButton(frame)
   end)
 end
 
+local function CreateMsButton(frame)
+  -- Add a button for Main Spec rolls
+  local msButton = CreateFrame("Button", nil, frame, UIParent)
+  msButton:SetWidth(32) -- Button size
+  msButton:SetHeight(32) -- Button size
+  msButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 5) -- Position at the bottom left
+
+  -- Set textures if you want to customize the appearance
+  msButton:SetNormalTexture("Interface/Buttons/UI-GroupLoot-Dice-Up")
+  msButton:SetPushedTexture("Interface/Buttons/UI-GroupLoot-Dice-Down")
+  msButton:SetHighlightTexture("Interface/Buttons/UI-GroupLoot-Dice-Highlight")
+
+  -- /roll 100 when the button is clicked
+  msButton:SetScript("OnClick", function()
+      RandomRoll(1,100)
+  end)
+end
+
+-- osButton
+-- tmogButton
+-- plusButton
+
 local function CreateItemRollFrame()
   local frame = CreateFrame("Frame", "ItemRollFrame", UIParent)
-  frame:SetWidth(145) -- Adjust size as needed
-  frame:SetHeight(180)
+  frame:SetWidth(180) -- Adjust size as needed
+  frame:SetHeight(220)
   frame:SetPoint("CENTER",UIParent,"CENTER",0,0) -- Position at center of the parent frame
   frame:SetBackdrop({
       bgFile = "Interface/Tooltips/UI-Tooltip-Background",
@@ -69,6 +91,7 @@ local function CreateItemRollFrame()
   frame:SetScript("OnDragStart", function () frame:StartMoving() end)
   frame:SetScript("OnDragStop", function () frame:StopMovingOrSizing() end)
   CreateCloseButton(frame)
+  CreateMsButton(frame)
   frame:Hide()
 
   return frame
