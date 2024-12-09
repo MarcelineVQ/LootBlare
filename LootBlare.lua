@@ -1,8 +1,53 @@
 ﻿local weird_vibes_mode = true
-local rollMessages = {}
+local srRollMessages = {}
+local msRollMessages = {}
+local osRollMessages = {}
+local tmogRollMessages = {}
+local rollers = {}
+local time_elapsed = 0
+local item_query = 0.5
+local times = 5
+local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
+end
+
+local function resetRolls()
+  srRollMessages = {}
+  msRollMessages = {}
+  osRollMessages = {}
+  tmogRollMessages = {}
+  rollers = {}
+end
+
+local function sortRolls()
+  table.sort(srRollMessages, function(a, b)
+    return a.roll > b.roll
+  end)
+  table.sort(msRollMessages, function(a, b)
+    return a.roll > b.roll
+  end)
+  table.sort(osRollMessages, function(a, b)
+    return a.roll > b.roll
+  end)
+  table.sort(tmogRollMessages, function(a, b)
+    return a.roll > b.roll
+  end)
+end
+
+local function colorMsg(msg)
+  if string.find(msg, "-101") then
+      colored_msg = string.format("%s%s|r", "|cFFFF0000", msg)
+  elseif string.find(msg, "-100") then
+      -- MS uses default color. cFFFFFF00
+      colored_msg = msg
+  elseif string.find(msg, "-99") then
+      colored_msg = string.format("%s%s|r", "|cFF00FF00", msg)
+  elseif string.find(msg, "-50") then
+    colored_msg = string.format("%s%s|r", "|cFF00FFFF", msg)
+  end
+  return colored_msg
 end
 
 local function tsize(t)
@@ -12,8 +57,6 @@ local function tsize(t)
   end
   if c > 0 then return c else return nil end
 end
-
-local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
 
 local function CheckItem(link)
   discover:SetOwner(UIParent, "ANCHOR_PRESERVE")
@@ -47,7 +90,24 @@ local function CreateCloseButton(frame)
   -- Hide the frame when the button is clicked
   closeButton:SetScript("OnClick", function()
       frame:Hide()
-      rollMessages = {}
+      resetRolls()
+  end)
+end
+
+local function CreateSrButton(frame)
+  local srButton = CreateFrame("Button", nil, frame, UIParent)
+  srButton:SetWidth(32) -- Button size
+  srButton:SetHeight(32) -- Button size
+  srButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 5, 5) -- Position at the bottom left
+
+  -- Set textures if you want to customize the appearance
+  srButton:SetNormalTexture("Interface/Buttons/UI-AttributeButton-Encourage-Up")
+  srButton:SetPushedTexture("Interface/Buttons/UI-AttributeButton-Encourage-Down")
+  srButton:SetHighlightTexture("Interface/Buttons/UI-AttributeButton-Encourage-Hilight")
+
+  -- /roll 50 when the button is clicked
+  srButton:SetScript("OnClick", function()
+      RandomRoll(1,101)
   end)
 end
 
@@ -56,7 +116,7 @@ local function CreateMsButton(frame)
   local msButton = CreateFrame("Button", nil, frame, UIParent)
   msButton:SetWidth(32) -- Button size
   msButton:SetHeight(32) -- Button size
-  msButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 5) -- Position at the bottom left
+  msButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 42, 5) -- Position at the bottom left
 
   -- Set textures if you want to customize the appearance
   msButton:SetNormalTexture("Interface/Buttons/UI-GroupLoot-Dice-Up")
@@ -73,13 +133,12 @@ local function CreateOsButton(frame)
   local osButton = CreateFrame("Button", nil, frame, UIParent)
   osButton:SetWidth(32) -- Button size
   osButton:SetHeight(32) -- Button size
-  osButton:SetPoint("BOTTOM", frame, "BOTTOM", 0, 0) -- Position at the bottom left
+  osButton:SetPoint("BOTTOM", frame, "BOTTOM", 0, 5) -- Position at the bottom left
 
   -- Set textures if you want to customize the appearance
-  osButton:SetNormalTexture("Interface/Buttons/UI-Panel-Button-Up")
-  osButton:SetPushedTexture("Interface/Buttons/UI-Panel-Button-Down")
-  osButton:SetHighlightTexture("Interface/Buttons/UI-Panel-Button-Highlight")
-  osButton:SetText("OS")
+  osButton:SetNormalTexture("Interface/Buttons/UI-GroupLoot-Coin-Up")
+  osButton:SetPushedTexture("Interface/Buttons/UI-GroupLoot-Coin-Down")
+  osButton:SetHighlightTexture("Interface/Buttons/UI-GroupLoot-Coin-Highlight")
 
   -- /roll 99 when the button is clicked
   osButton:SetScript("OnClick", function()
@@ -91,13 +150,11 @@ local function CreateTmogButton(frame)
   local tmogButton = CreateFrame("Button", nil, frame, UIParent)
   tmogButton:SetWidth(32) -- Button size
   tmogButton:SetHeight(32) -- Button size
-  tmogButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0) -- Position at the bottom left
+  tmogButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5, 10) -- Position at the bottom left
 
   -- Set textures if you want to customize the appearance
-  tmogButton:SetNormalTexture("Interface/Buttons/UI-Panel-Button-Up")
-  tmogButton:SetPushedTexture("Interface/Buttons/UI-Panel-Button-Down")
-  tmogButton:SetHighlightTexture("Interface/Buttons/UI-Panel-Button-Highlight")
-  tmogButton:SetText("TMOG")
+  tmogButton:SetNormalTexture("Interface/Buttons/UI-MicroButton-Bug-Up")
+  tmogButton:SetPushedTexture("Interface/Buttons/UI-MicroButton-Bug-Down")
 
   -- /roll 50 when the button is clicked
   tmogButton:SetScript("OnClick", function()
@@ -107,7 +164,7 @@ end
 
 local function CreateItemRollFrame()
   local frame = CreateFrame("Frame", "ItemRollFrame", UIParent)
-  frame:SetWidth(180) -- Adjust size as needed
+  frame:SetWidth(200) -- Adjust size as needed
   frame:SetHeight(220)
   frame:SetPoint("CENTER",UIParent,"CENTER",0,0) -- Position at center of the parent frame
   frame:SetBackdrop({
@@ -125,6 +182,7 @@ local function CreateItemRollFrame()
   frame:SetScript("OnDragStart", function () frame:StartMoving() end)
   frame:SetScript("OnDragStop", function () frame:StopMovingOrSizing() end)
   CreateCloseButton(frame)
+  CreateSrButton(frame)
   CreateMsButton(frame)
   CreateOsButton(frame)
   CreateTmogButton(frame)
@@ -214,9 +272,6 @@ local function SetItemInfo(frame, itemLinkArg)
   return true
 end
 
-local time_elapsed = 0
-local item_query = 0.5
-local times = 5
 local function ShowFrame(frame,duration,item)
   frame:SetScript("OnUpdate", function()
     time_elapsed = time_elapsed + arg1
@@ -251,33 +306,43 @@ local function CreateTextArea(frame)
   return textArea
 end
 
-
 local function UpdateTextArea(frame)
   if not frame.textArea then
     frame.textArea = CreateTextArea(frame)
   end
-
-  table.sort(rollMessages, function(a, b)
-    return a.roll > b.roll
-  end)
 
   -- frame.textArea:SetTeClear()  -- Clear the existing messages
   local text = ""
   local colored_msg = ""
   local count = 0
 
-  for k, v in pairs(rollMessages) do
-      if count >= 7 then break end
-      colored_msg = v.msg
-      if string.find(v.msg, "-99") then
-        colored_msg = string.format("%s%s|r", "|cFF00FF00", v.msg)
-      end
-      if string.find(v.msg, "-50") then
-        colored_msg = string.format("%s%s|r", "|cFF00FFFF", v.msg)
-      end
-      text = text .. colored_msg .. "\n"
-      count = count + 1
+  sortRolls()
+
+  for i, v in ipairs(srRollMessages) do
+    if count >= 5 then break end
+    colored_msg = v.msg
+    text = text .. colorMsg(v.msg) .. "\n"
+    count = count + 1
   end
+  for i, v in ipairs(msRollMessages) do
+    if count >= 6 then break end
+    colored_msg = v.msg
+    text = text .. colorMsg(v.msg) .. "\n"
+    count = count + 1
+  end
+  for i, v in ipairs(osRollMessages) do
+    if count >= 7 then break end
+    colored_msg = v.msg
+    text = text .. colorMsg(v.msg) .. "\n"
+    count = count + 1
+  end
+  for i, v in ipairs(tmogRollMessages) do
+    if count >= 8 then break end
+    colored_msg = v.msg
+    text = text .. colorMsg(v.msg) .. "\n"
+    count = count + 1
+  end
+
   frame.textArea:SetText(text)
 end
 
@@ -311,16 +376,20 @@ end
 local function HandleChatMessage(event, message, from)
   if event == "CHAT_MSG_SYSTEM" and itemRollFrame:IsShown() then
     if string.find(message, "rolls") and string.find(message, "(%d+)") then
-      -- Add the new message to the rollMessages table
-      -- table.insert(rollMessages, message)
-      -- Optionally, update the display immediately
-      -- UpdateScrollArea(itemRollFrame)
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
-      -- lb_print(roller .. " " .. roll .. " " .. minRoll .. " " .. maxRoll)
-      if roller and roll and rollMessages[roller] == nil then
-        roll = tonumber(roll) -- Convert roll to a number
-        rollMessages[roller] = { roller = roller, roll = roll, msg = message }
-        --table.insert(rollMessages, { roller = roller, roll = roll, msg = message })
+      if roller and roll and rollers[roller] == nil then
+        roll = tonumber(roll)
+        rollers[roller] = 1
+        message = { roller = roller, roll = roll, msg = message }
+        if maxRoll == "101" then
+          table.insert(srRollMessages, message)
+        elseif maxRoll == "100" then
+          table.insert(msRollMessages, message)
+        elseif maxRoll == "99" then
+          table.insert(osRollMessages, message)
+        elseif maxRoll == "50" then
+          table.insert(tmogRollMessages, message)
+        end
         time_elapsed = 0
         UpdateTextArea(itemRollFrame)
       end
@@ -340,11 +409,10 @@ local function HandleChatMessage(event, message, from)
                string.find(message,"Rolling is now Closed") then
           return
         end
-        rollMessages = {}
+        resetRolls()
         UpdateTextArea(itemRollFrame)
         time_elapsed = 0
         ShowFrame(itemRollFrame,FrameShownDuration,links[1])
-
         -- SetItemInfo(itemRollFrame,links[1])
       end
     end
