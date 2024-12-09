@@ -1,4 +1,5 @@
 ﻿local weird_vibes_mode = true
+local rollMessages = {}
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
@@ -46,6 +47,7 @@ local function CreateCloseButton(frame)
   -- Hide the frame when the button is clicked
   closeButton:SetScript("OnClick", function()
       frame:Hide()
+      rollMessages = {}
   end)
 end
 
@@ -67,9 +69,41 @@ local function CreateMsButton(frame)
   end)
 end
 
--- osButton
--- tmogButton
--- plusButton
+local function CreateOsButton(frame)
+  local osButton = CreateFrame("Button", nil, frame, UIParent)
+  osButton:SetWidth(32) -- Button size
+  osButton:SetHeight(32) -- Button size
+  osButton:SetPoint("BOTTOM", frame, "BOTTOM", 0, 0) -- Position at the bottom left
+
+  -- Set textures if you want to customize the appearance
+  osButton:SetNormalTexture("Interface/Buttons/UI-Panel-Button-Up")
+  osButton:SetPushedTexture("Interface/Buttons/UI-Panel-Button-Down")
+  osButton:SetHighlightTexture("Interface/Buttons/UI-Panel-Button-Highlight")
+  osButton:SetText("OS")
+
+  -- /roll 99 when the button is clicked
+  osButton:SetScript("OnClick", function()
+      RandomRoll(1,99)
+  end)
+end
+
+local function CreateTmogButton(frame)
+  local tmogButton = CreateFrame("Button", nil, frame, UIParent)
+  tmogButton:SetWidth(32) -- Button size
+  tmogButton:SetHeight(32) -- Button size
+  tmogButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0) -- Position at the bottom left
+
+  -- Set textures if you want to customize the appearance
+  tmogButton:SetNormalTexture("Interface/Buttons/UI-Panel-Button-Up")
+  tmogButton:SetPushedTexture("Interface/Buttons/UI-Panel-Button-Down")
+  tmogButton:SetHighlightTexture("Interface/Buttons/UI-Panel-Button-Highlight")
+  tmogButton:SetText("TMOG")
+
+  -- /roll 50 when the button is clicked
+  tmogButton:SetScript("OnClick", function()
+      RandomRoll(1,50)
+  end)
+end
 
 local function CreateItemRollFrame()
   local frame = CreateFrame("Frame", "ItemRollFrame", UIParent)
@@ -92,6 +126,8 @@ local function CreateItemRollFrame()
   frame:SetScript("OnDragStop", function () frame:StopMovingOrSizing() end)
   CreateCloseButton(frame)
   CreateMsButton(frame)
+  CreateOsButton(frame)
+  CreateTmogButton(frame)
   frame:Hide()
 
   return frame
@@ -192,6 +228,7 @@ local function ShowFrame(frame,duration,item)
       time_elapsed = 0
       item_query = 1.5
       times = 3
+      rollMessages = {}
     end
     if times > 0 and item_query < 0 and not CheckItem(item) then
       times = times - 1
@@ -214,7 +251,7 @@ local function CreateTextArea(frame)
   return textArea
 end
 
-local rollMessages = {}
+
 local function UpdateTextArea(frame)
   if not frame.textArea then
     frame.textArea = CreateTextArea(frame)
@@ -226,10 +263,19 @@ local function UpdateTextArea(frame)
 
   -- frame.textArea:SetTeClear()  -- Clear the existing messages
   local text = ""
+  local colored_msg = ""
   local count = 0
-  for i, message in ipairs(rollMessages) do
+
+  for k, v in pairs(rollMessages) do
       if count >= 7 then break end
-      text = text .. message.msg .. "\n"
+      colored_msg = v.msg
+      if string.find(v.msg, "-99") then
+        colored_msg = string.format("%s%s|r", "|cFF00FF00", v.msg)
+      end
+      if string.find(v.msg, "-50") then
+        colored_msg = string.format("%s%s|r", "|cFF00FFFF", v.msg)
+      end
+      text = text .. colored_msg .. "\n"
       count = count + 1
   end
   frame.textArea:SetText(text)
@@ -271,11 +317,12 @@ local function HandleChatMessage(event, message, from)
       -- UpdateScrollArea(itemRollFrame)
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
       -- lb_print(roller .. " " .. roll .. " " .. minRoll .. " " .. maxRoll)
-      if roller and roll then
-          roll = tonumber(roll) -- Convert roll to a number
-          table.insert(rollMessages, { roller = roller, roll = roll, msg = message })
-          time_elapsed = 0
-          UpdateTextArea(itemRollFrame)
+      if roller and roll and rollMessages[roller] == nil then
+        roll = tonumber(roll) -- Convert roll to a number
+        rollMessages[roller] = { roller = roller, roll = roll, msg = message }
+        --table.insert(rollMessages, { roller = roller, roll = roll, msg = message })
+        time_elapsed = 0
+        UpdateTextArea(itemRollFrame)
       end
     end
   elseif event == "CHAT_MSG_RAID_WARNING" then

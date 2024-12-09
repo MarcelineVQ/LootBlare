@@ -1,4 +1,4 @@
-Loot Blare 1.1.3
+Loot Blare 1.1.4
 ===
 
 A frame that pops up and shows item and rolls when a single uncommon+ item is linked in Raid Warning.  
@@ -15,4 +15,5 @@ Make the frame appear to move it with:
 
 changelog:
 
+1.1.4 -> Added more buttons for OS and Tmog and now only will register the first roll of each player
 1.1.3 -> Added MainSpec Button for rolling
