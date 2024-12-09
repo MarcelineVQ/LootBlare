@@ -8,12 +8,13 @@ local time_elapsed = 0
 local item_query = 0.5
 local times = 5
 local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
-local buttonWidth = 32
-local numButtons = 4
-local bottomPadding = 10
-local font = "Fonts\\FRIZQT__.TTF"
-local fontSize = 12
-local fontOutline = "OUTLINE"
+
+local BUTTON_WIDTH = 32
+local BUTTON_COUNT = 4
+local BUTTON_PADING = 10
+local FONT_NAME = "Fonts\\FRIZQT__.TTF"
+local FONT_SIZE = 12
+local FONT_OUTLINE = "OUTLINE"
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
@@ -102,16 +103,16 @@ end
 
 local function CreateActionButton(frame, buttonText, tooltipText, index, onClickAction)
   local panelWidth = frame:GetWidth()
-  local spacing = (panelWidth - (numButtons * buttonWidth)) / (numButtons + 1)
+  local spacing = (panelWidth - (BUTTON_COUNT * BUTTON_WIDTH)) / (BUTTON_COUNT + 1)
   local button = CreateFrame("Button", nil, frame, UIParent)
-  button:SetWidth(buttonWidth)
-  button:SetHeight(buttonWidth)
-  button:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", index*spacing + (index-1)*buttonWidth, bottomPadding)
+  button:SetWidth(BUTTON_WIDTH)
+  button:SetHeight(BUTTON_WIDTH)
+  button:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", index*spacing + (index-1)*BUTTON_WIDTH, BUTTON_PADING)
 
   -- Set button text
   button:SetText(buttonText)
   local font = button:GetFontString()
-  font:SetFont(font, fontSize, fontOutline)
+  font:SetFont(FONT_NAME, FONT_SIZE, FONT_OUTLINE)
 
   -- Add background 
   local bg = button:CreateTexture(nil, "BACKGROUND")
