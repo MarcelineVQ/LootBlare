@@ -8,6 +8,12 @@ local time_elapsed = 0
 local item_query = 0.5
 local times = 5
 local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
+local buttonWidth = 32
+local numButtons = 4
+local bottomPadding = 10
+local font = "Fonts\\FRIZQT__.TTF"
+local fontSize = 12
+local fontOutline = "OUTLINE"
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
@@ -94,71 +100,49 @@ local function CreateCloseButton(frame)
   end)
 end
 
-local function CreateSrButton(frame)
-  local srButton = CreateFrame("Button", nil, frame, UIParent)
-  srButton:SetWidth(32) -- Button size
-  srButton:SetHeight(32) -- Button size
-  srButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 5, 5) -- Position at the bottom left
+local function CreateActionButton(frame, buttonText, tooltipText, index, onClickAction)
+  local panelWidth = frame:GetWidth()
+  local spacing = (panelWidth - (numButtons * buttonWidth)) / (numButtons + 1)
+  local button = CreateFrame("Button", nil, frame, UIParent)
+  button:SetWidth(buttonWidth)
+  button:SetHeight(buttonWidth)
+  button:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", index*spacing + (index-1)*buttonWidth, bottomPadding)
 
-  -- Set textures if you want to customize the appearance
-  srButton:SetNormalTexture("Interface/Buttons/UI-AttributeButton-Encourage-Up")
-  srButton:SetPushedTexture("Interface/Buttons/UI-AttributeButton-Encourage-Down")
-  srButton:SetHighlightTexture("Interface/Buttons/UI-AttributeButton-Encourage-Hilight")
+  -- Set button text
+  button:SetText(buttonText)
+  local font = button:GetFontString()
+  font:SetFont(font, fontSize, fontOutline)
 
-  -- /roll 50 when the button is clicked
-  srButton:SetScript("OnClick", function()
-      RandomRoll(1,101)
+  -- Add background 
+  local bg = button:CreateTexture(nil, "BACKGROUND")
+  bg:SetAllPoints(button)
+  bg:SetTexture(1, 1, 1, 1) -- White texture
+  bg:SetVertexColor(0.2, 0.2, 0.2, 1) -- Dark gray background
+
+  button:SetScript("OnMouseDown", function(self)
+      bg:SetVertexColor(0.6, 0.6, 0.6, 1) -- Even lighter gray when pressed
   end)
-end
 
-local function CreateMsButton(frame)
-  -- Add a button for Main Spec rolls
-  local msButton = CreateFrame("Button", nil, frame, UIParent)
-  msButton:SetWidth(32) -- Button size
-  msButton:SetHeight(32) -- Button size
-  msButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 42, 5) -- Position at the bottom left
-
-  -- Set textures if you want to customize the appearance
-  msButton:SetNormalTexture("Interface/Buttons/UI-GroupLoot-Dice-Up")
-  msButton:SetPushedTexture("Interface/Buttons/UI-GroupLoot-Dice-Down")
-  msButton:SetHighlightTexture("Interface/Buttons/UI-GroupLoot-Dice-Highlight")
-
-  -- /roll 100 when the button is clicked
-  msButton:SetScript("OnClick", function()
-      RandomRoll(1,100)
+  button:SetScript("OnMouseUp", function(self)
+      bg:SetVertexColor(0.4, 0.4, 0.4, 1) -- Lighter gray on release
   end)
-end
 
-local function CreateOsButton(frame)
-  local osButton = CreateFrame("Button", nil, frame, UIParent)
-  osButton:SetWidth(32) -- Button size
-  osButton:SetHeight(32) -- Button size
-  osButton:SetPoint("BOTTOM", frame, "BOTTOM", 0, 5) -- Position at the bottom left
-
-  -- Set textures if you want to customize the appearance
-  osButton:SetNormalTexture("Interface/Buttons/UI-GroupLoot-Coin-Up")
-  osButton:SetPushedTexture("Interface/Buttons/UI-GroupLoot-Coin-Down")
-  osButton:SetHighlightTexture("Interface/Buttons/UI-GroupLoot-Coin-Highlight")
-
-  -- /roll 99 when the button is clicked
-  osButton:SetScript("OnClick", function()
-      RandomRoll(1,99)
+  -- Add tooltip
+  button:SetScript("OnEnter", function(self)
+      GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+      GameTooltip:SetText(tooltipText, nil, nil, nil, nil, true)
+      bg:SetVertexColor(0.4, 0.4, 0.4, 1) -- Lighter gray on hover
+      GameTooltip:Show()
   end)
-end
 
-local function CreateTmogButton(frame)
-  local tmogButton = CreateFrame("Button", nil, frame, UIParent)
-  tmogButton:SetWidth(32) -- Button size
-  tmogButton:SetHeight(32) -- Button size
-  tmogButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5, 10) -- Position at the bottom left
+  button:SetScript("OnLeave", function(self)
+      bg:SetVertexColor(0.2, 0.2, 0.2, 1) -- Dark gray when not hovered
+      GameTooltip:Hide()
+  end)
 
-  -- Set textures if you want to customize the appearance
-  tmogButton:SetNormalTexture("Interface/Buttons/UI-MicroButton-Bug-Up")
-  tmogButton:SetPushedTexture("Interface/Buttons/UI-MicroButton-Bug-Down")
-
-  -- /roll 50 when the button is clicked
-  tmogButton:SetScript("OnClick", function()
-      RandomRoll(1,50)
+  -- Add functionality to the button
+  button:SetScript("OnClick", function()
+    onClickAction()
   end)
 end
 
@@ -182,10 +166,10 @@ local function CreateItemRollFrame()
   frame:SetScript("OnDragStart", function () frame:StartMoving() end)
   frame:SetScript("OnDragStop", function () frame:StopMovingOrSizing() end)
   CreateCloseButton(frame)
-  CreateSrButton(frame)
-  CreateMsButton(frame)
-  CreateOsButton(frame)
-  CreateTmogButton(frame)
+  CreateActionButton(frame, "SR", "Roll for Soft Reserve", 1, function() RandomRoll(1,101) end)
+  CreateActionButton(frame, "MS", "Roll for Main Spec", 2, function() RandomRoll(1,100) end)
+  CreateActionButton(frame, "OS", "Roll for Off Spec", 3, function() RandomRoll(1,99) end)
+  CreateActionButton(frame, "TM", "Roll for Transmog", 4, function() RandomRoll(1,50) end)
   frame:Hide()
 
   return frame
