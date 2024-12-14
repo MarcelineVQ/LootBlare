@@ -4,6 +4,7 @@ local msRollMessages = {}
 local osRollMessages = {}
 local tmogRollMessages = {}
 local rollers = {}
+local isRolling = false
 local time_elapsed = 0
 local item_query = 0.5
 local times = 5
@@ -293,7 +294,8 @@ local function ShowFrame(frame,duration,item)
       item_query = 1.5
       times = 3
       rollMessages = {}
-      if frameAutoClose then frame:Hide() end
+      isRolling = false
+      if FrameAutoClose then frame:Hide() end
     end
     if times > 0 and item_query < 0 and not CheckItem(item) then
       times = times - 1
@@ -393,8 +395,7 @@ local function IsUnitMasterLooter(unit)
   return false
 end
 
-local function HandleChatMessage(event, message, from)
-  if event == "CHAT_MSG_SYSTEM" and itemRollFrame:IsShown() then
+  if event == "CHAT_MSG_SYSTEM" and isRolling then
     if string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
       if roller and roll and rollers[roller] == nil then
@@ -432,8 +433,8 @@ local function HandleChatMessage(event, message, from)
         resetRolls()
         UpdateTextArea(itemRollFrame)
         time_elapsed = 0
+        isRolling = true
         ShowFrame(itemRollFrame,FrameShownDuration,links[1])
-        -- SetItemInfo(itemRollFrame,links[1])
       end
     end
   elseif event == "ADDON_LOADED" and arg1 == "LootBlare" then
