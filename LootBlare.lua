@@ -1,4 +1,4 @@
-﻿local weird_vibes_mode = true
+local weird_vibes_mode = true
 local srRollMessages = {}
 local msRollMessages = {}
 local osRollMessages = {}
@@ -413,6 +413,7 @@ itemRollFrame:SetScript("OnEvent", function () HandleChatMessage(event,arg1,arg2
 
 -- Register the slash command
 SLASH_LOOTBLARE1 = '/lootblare'
+SLASH_LOOTBLARE2 = '/lb'
 
 -- Command handler
 SlashCmdList["LOOTBLARE"] = function(msg)
