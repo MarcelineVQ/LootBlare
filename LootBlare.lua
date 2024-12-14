@@ -27,6 +27,7 @@ local RAID_CLASS_COLORS = {
   ["Paladin"] = "FFF58CBA",
 }
 
+local ADDON_TEXT_COLOR= "FFEDD8BB"
 local DEFAULT_TEXT_COLOR = "FFFFFF00"
 local SR_TEXT_COLOR = "FFFF0000"
 local MS_TEXT_COLOR = "FFFFFF00"
@@ -34,7 +35,7 @@ local OS_TEXT_COLOR = "FF00FF00"
 local TM_TEXT_COLOR = "FF00FFFF"
 
 local function lb_print(msg)
-  DEFAULT_CHAT_FRAME:AddMessage(msg)
+  DEFAULT_CHAT_FRAME:AddMessage("|c" .. ADDON_TEXT_COLOR .. "LootBlare: " .. msg .. "|r")
 end
 
 local function resetRolls()
@@ -287,17 +288,16 @@ local function ShowFrame(frame,duration,item)
     item_query = item_query - arg1
     if frame.timerText then frame.timerText:SetText(format("%.1f", duration - time_elapsed)) end
     if time_elapsed >= duration then
-      frame:Hide()
       frame:SetScript("OnUpdate", nil)
       time_elapsed = 0
       item_query = 1.5
       times = 3
       rollMessages = {}
+      if frameAutoClose then frame:Hide() end
     end
     if times > 0 and item_query < 0 and not CheckItem(item) then
       times = times - 1
     else
-      -- try to set item info, if it's not a valid item or too low quality, hide
       if not SetItemInfo(itemRollFrame,item) then frame:Hide() end
       times = 5
     end
@@ -437,7 +437,8 @@ local function HandleChatMessage(event, message, from)
       end
     end
   elseif event == "ADDON_LOADED" and arg1 == "LootBlare" then
-    if not FrameShownDuration then FrameShownDuration = 20 end
+    if FrameShownDuration == nil then FrameShownDuration = 20 end
+    if FrameAutoClose == nil then FrameAutoClose = true end
   end
 end
 
@@ -452,15 +453,41 @@ SLASH_LOOTBLARE2 = '/lb'
 
 -- Command handler
 SlashCmdList["LOOTBLARE"] = function(msg)
-    local newDuration = tonumber(msg)
-    if newDuration then
-      if newDuration > 0 then
-        FrameShownDuration = newDuration
-        lb_print("Frame shown duration set to " .. newDuration .. " seconds.")
-      else
-        lb_print("Invalid duration. Please enter a number greater than 0.")
-      end
+  if msg == "" then
+    if itemRollFrame:IsVisible() then
+      itemRollFrame:Hide()
     else
-      ShowFrame(itemRollFrame,FrameShownDuration,"item:15723")
+      itemRollFrame:Show()
     end
+  elseif msg == "help" then
+    lb_print("LootBlare is a simple addon that displays item rolls in a frame.")
+    lb_print("Type /lb time <seconds> to set the duration the frame is shown.")
+    lb_print("Type /lb autoClose on/off to enable/disable auto closing the frame after the time has elapsed.")
+    lb_print("Type /lb settings to see the current settings.")
+  elseif msg == "settings" then
+    lb_print("Frame shown duration: " .. FrameShownDuration .. " seconds.")
+    lb_print("Auto closing: " .. (FrameAutoClose and "on" or "off"))
+  elseif string.find(msg, "time") then
+    local _,_,newDuration = string.find(msg, "time (%d+)")
+    newDuration = tonumber(newDuration)
+    if newDuration and newDuration > 0 then
+      FrameShownDuration = newDuration
+      lb_print("Frame shown duration set to " .. newDuration .. " seconds.")
+    else
+      lb_print("Invalid duration. Please enter a number greater than 0.")
+    end
+  elseif string.find(msg, "autoClose") then
+    local _,_,autoClose = string.find(msg, "autoClose (%a+)")
+    if autoClose == "on" then
+      lb_print("Auto closing enabled.")
+      FrameAutoClose = true
+    elseif autoClose == "off" then
+      lb_print("Auto closing disabled.")
+      FrameAutoClose = false
+    else
+      lb_print("Invalid option. Please enter 'on' or 'off'.")
+    end
+  else
+  lb_print("Invalid command. Type /lb help for a list of commands.")
+  end
 end
