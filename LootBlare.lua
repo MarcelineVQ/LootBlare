@@ -15,6 +15,23 @@ local BUTTON_PADING = 10
 local FONT_NAME = "Fonts\\FRIZQT__.TTF"
 local FONT_SIZE = 12
 local FONT_OUTLINE = "OUTLINE"
+local RAID_CLASS_COLORS = {
+  ["Warrior"] = "FFC79C6E",
+  ["Mage"]    = "FF69CCF0",
+  ["Rogue"]   = "FFFFF569",
+  ["Druid"]   = "FFFF7D0A",
+  ["Hunter"]  = "FFABD473",
+  ["Shaman"]  = "FF0070DE",
+  ["Priest"]  = "FFFFFFFF",
+  ["Warlock"] = "FF9482C9",
+  ["Paladin"] = "FFF58CBA",
+}
+
+local DEFAULT_TEXT_COLOR = "FFFFFF00"
+local SR_TEXT_COLOR = "FFFF0000"
+local MS_TEXT_COLOR = "FFFFFF00"
+local OS_TEXT_COLOR = "FF00FF00"
+local TM_TEXT_COLOR = "FF00FFFF"
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
@@ -43,17 +60,24 @@ local function sortRolls()
   end)
 end
 
-local function colorMsg(msg)
+local function colorMsg(message)
+  msg = message.msg
+  class = message.class
+  _,_,_, message_end = string.find(msg, "(%S+)%s+(.+)")
+  classColor = RAID_CLASS_COLORS[class]
+  textColor = DEFAULT_TEXT_COLOR
+
   if string.find(msg, "-101") then
-      colored_msg = string.format("%s%s|r", "|cFFFF0000", msg)
+    textColor = SR_TEXT_COLOR
   elseif string.find(msg, "-100") then
-      -- MS uses default color. cFFFFFF00
-      colored_msg = msg
+    textColor = MS_TEXT_COLOR
   elseif string.find(msg, "-99") then
-      colored_msg = string.format("%s%s|r", "|cFF00FF00", msg)
+    textColor = OS_TEXT_COLOR
   elseif string.find(msg, "-50") then
-    colored_msg = string.format("%s%s|r", "|cFF00FFFF", msg)
+    textColor = TM_TEXT_COLOR
   end
+
+  colored_msg = "|c" .. classColor .. "" .. message.roller .. "|r |c" .. textColor .. message_end .. "|r"
   return colored_msg
 end
 
@@ -291,6 +315,17 @@ local function CreateTextArea(frame)
   return textArea
 end
 
+local function GetClassOfRoller(rollerName)
+  -- Iterate through the raid roster
+  for i = 1, GetNumRaidMembers() do
+      local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(i)
+      if name == rollerName then
+          return class -- Return the class as a string (e.g., "Warrior", "Mage")
+      end
+  end
+  return nil -- Return nil if the player is not found in the raid
+end
+
 local function UpdateTextArea(frame)
   if not frame.textArea then
     frame.textArea = CreateTextArea(frame)
@@ -306,25 +341,25 @@ local function UpdateTextArea(frame)
   for i, v in ipairs(srRollMessages) do
     if count >= 5 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v.msg) .. "\n"
+    text = text .. colorMsg(v) .. "\n"
     count = count + 1
   end
   for i, v in ipairs(msRollMessages) do
     if count >= 6 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v.msg) .. "\n"
+    text = text .. colorMsg(v) .. "\n"
     count = count + 1
   end
   for i, v in ipairs(osRollMessages) do
     if count >= 7 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v.msg) .. "\n"
+    text = text .. colorMsg(v) .. "\n"
     count = count + 1
   end
   for i, v in ipairs(tmogRollMessages) do
     if count >= 8 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v.msg) .. "\n"
+    text = text .. colorMsg(v) .. "\n"
     count = count + 1
   end
 
@@ -365,7 +400,7 @@ local function HandleChatMessage(event, message, from)
       if roller and roll and rollers[roller] == nil then
         roll = tonumber(roll)
         rollers[roller] = 1
-        message = { roller = roller, roll = roll, msg = message }
+        message = { roller = roller, roll = roll, msg = message, class = GetClassOfRoller(roller) }
         if maxRoll == "101" then
           table.insert(srRollMessages, message)
         elseif maxRoll == "100" then
