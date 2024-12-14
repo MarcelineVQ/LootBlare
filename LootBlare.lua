@@ -395,7 +395,6 @@ end
 
 local function HandleChatMessage(event, message, sender)
   if IsSenderMasterLooter(sender) and (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
-
     local _,_,duration = string.find(message, "Roll time set to (%d+) seconds")
     duration = tonumber(duration)
     if duration and duration ~= FrameShownDuration then
@@ -403,8 +402,15 @@ local function HandleChatMessage(event, message, sender)
       -- The players get the new duration from the master looter after the first rolls
       lb_print("Rolling duration set to " .. FrameShownDuration .. " seconds. (set by Master Looter)")
     end
-  elseif event == "CHAT_MSG_SYSTEM" and isRolling then
-    if string.find(message, "rolls") and string.find(message, "(%d+)") then
+  elseif event == "CHAT_MSG_SYSTEM" then
+    local _,_, newML = string.find(message, "(%S+) is now the loot master")
+    if newML then
+      playerName = UnitName("player")
+      -- if the player is the new master looter, announce the roll time
+      if newML == playerName then
+        SendChatMessage("Roll time set to " .. FrameShownDuration .. " seconds.", "RAID")
+      end
+    elseif isRolling and string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
       if roller and roll and rollers[roller] == nil then
         roll = tonumber(roll)
@@ -423,16 +429,10 @@ local function HandleChatMessage(event, message, sender)
         UpdateTextArea(itemRollFrame)
       end
     end
+
   elseif event == "CHAT_MSG_RAID_WARNING" then
     local isSenderML = IsSenderMasterLooter(sender)
     if isSenderML then -- only show if the sender is the master looter
-
-      -- check if the player is the sender of the message
-      playerName = UnitName("player")
-      if playerName == sender then
-        -- send chat message to the raid
-        SendChatMessage("Rolling is now open for " .. message .. ". Roll time set to " .. FrameShownDuration .. " seconds.", "RAID")
-      end
       local links = ExtractItemLinksFromMessage(message)
       if tsize(links) == 1 then
         if string.find(message, "^No one has need:") or

@@ -1,4 +1,4 @@
-# Loot Blare 1.1.7
+# Loot Blare 1.1.8
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**. The original version of this addon can be found [here](https://github.com/MarcelineVQ/LootBlare)
 
@@ -26,7 +26,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
   Example: `/lootblare 'time 30` to set the duration to 30 seconds.
 
-The Master Looter announces the frame duration at the start of each rolling session or immediately after updating the value with `/lb time <number>`. This announced value is applied to the entire raid to ensure consistency.
+Every time the master looter changes, the new master looter announces the roll time defined. This value is also announced after updating the value with `/lb time <number>`. This announced value is applied to the entire raid to ensure consistency.
 
 - **Auto-Close**: The frame closes automatically after the set time. Toggle this feature on or off with:  
   `/lootblare autoClose on/off` or `/lb autoClose on/off`
@@ -40,6 +40,7 @@ The Master Looter announces the frame duration at the start of each rolling sess
 
 Changelog:
 
+- **1.1.8**: Remove announce message after each roll. Added time announce message after changing master loot
 - **1.1.7**: Added class colors, autoClose option, and config commands. Only show frame if the sender is the ML. Ignore rolls after the time has elapsed. Get FrameShowDuration from the ML.
 - **1.1.6**: Simple Buttons and Tooltips.
 - **1.1.5**: Added button for SR and roll type order and color.
