@@ -410,8 +410,6 @@ local function HandleChatMessage(event, message, sender)
       if newML == playerName then
         SendChatMessage("Roll time set to " .. FrameShownDuration .. " seconds.", "RAID")
       end
-    end 
- 
     elseif isRolling and string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
       if roller and roll and rollers[roller] == nil then
@@ -430,7 +428,7 @@ local function HandleChatMessage(event, message, sender)
         time_elapsed = 0
         UpdateTextArea(itemRollFrame)
       end
-    
+    end
 
   elseif event == "CHAT_MSG_RAID_WARNING" then
     local isSenderML = IsSenderMasterLooter(sender)
