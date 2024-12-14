@@ -382,7 +382,6 @@ local function IsSenderMasterLooter(sender)
   local lootMethod, masterLooterPartyID = GetLootMethod()
   if lootMethod == "master" and masterLooterPartyID then
       if masterLooterPartyID == 0 then
-          -- Player is the Master Looter
           return sender == UnitName("player")
       else
         local senderUID = "party" .. masterLooterPartyID
@@ -395,7 +394,16 @@ end
 
 
 local function HandleChatMessage(event, message, sender)
-  if event == "CHAT_MSG_SYSTEM" and isRolling then
+  if IsSenderMasterLooter(sender) and (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
+    lb_print("message raid from ML detected")
+    local _,_,duration = string.find(message, "You have (%d+) seconds to roll")
+    duration = tonumber(duration)
+    if duration and duration ~= FrameShownDuration then
+      FrameShownDuration = duration
+      -- The players get the new duration from the master looter after the first rolls
+      lb_print("Rolling duration set to " .. FrameShownDuration .. " seconds.")
+    end
+  elseif event == "CHAT_MSG_SYSTEM" and isRolling then
     if string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
       if roller and roll and rollers[roller] == nil then
@@ -418,6 +426,13 @@ local function HandleChatMessage(event, message, sender)
   elseif event == "CHAT_MSG_RAID_WARNING" then
     local isSenderML = IsSenderMasterLooter(sender)
     if isSenderML then -- only show if the sender is the master looter
+
+      -- check if the player is the sender of the message
+      playerName = UnitName("player")
+      if playerName == sender then
+        -- send chat message to the raid
+        SendChatMessage("Rolling is now open for " .. message .. ". You have " .. FrameShownDuration .. " seconds to roll.", "RAID")
+      end
       local links = ExtractItemLinksFromMessage(message)
       if tsize(links) == 1 then
         if string.find(message, "^No one has need:") or
@@ -438,7 +453,7 @@ local function HandleChatMessage(event, message, sender)
       end
     end
   elseif event == "ADDON_LOADED" and arg1 == "LootBlare" then
-    if FrameShownDuration == nil then FrameShownDuration = 20 end
+    if FrameShownDuration == nil then FrameShownDuration = 15 end
     if FrameAutoClose == nil then FrameAutoClose = true end
   end
 end
@@ -446,6 +461,8 @@ end
 itemRollFrame:RegisterEvent("ADDON_LOADED")
 itemRollFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID_WARNING")
+itemRollFrame:RegisterEvent("CHAT_MSG_RAID")
+itemRollFrame:RegisterEvent("CHAT_MSG_RAID_LEADER")
 itemRollFrame:SetScript("OnEvent", function () HandleChatMessage(event,arg1,arg2) end)
 
 -- Register the slash command
