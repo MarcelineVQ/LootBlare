@@ -396,7 +396,7 @@ end
 local function HandleChatMessage(event, message, sender)
   if IsSenderMasterLooter(sender) and (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
 
-    local _,_,duration = string.find(message, "You have (%d+) seconds to roll")
+    local _,_,duration = string.find(message, "Roll time set to (%d+) seconds")
     duration = tonumber(duration)
     if duration and duration ~= FrameShownDuration then
       FrameShownDuration = duration
@@ -431,7 +431,7 @@ local function HandleChatMessage(event, message, sender)
       playerName = UnitName("player")
       if playerName == sender then
         -- send chat message to the raid
-        SendChatMessage("Rolling is now open for " .. message .. ". You have " .. FrameShownDuration .. " seconds to roll.", "RAID")
+        SendChatMessage("Rolling is now open for " .. message .. ". Roll time set to " .. FrameShownDuration .. " seconds.", "RAID")
       end
       local links = ExtractItemLinksFromMessage(message)
       if tsize(links) == 1 then
@@ -490,7 +490,10 @@ SlashCmdList["LOOTBLARE"] = function(msg)
     newDuration = tonumber(newDuration)
     if newDuration and newDuration > 0 then
       FrameShownDuration = newDuration
-      lb_print("Frame shown duration set to " .. newDuration .. " seconds.")
+      lb_print("Roll time set to " .. newDuration .. " seconds.")
+      if IsSenderMasterLooter(UnitName("player")) then
+        SendChatMessage("Roll time set to " .. newDuration .. " seconds.", "RAID")
+      end
     else
       lb_print("Invalid duration. Please enter a number greater than 0.")
     end
