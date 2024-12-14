@@ -1,4 +1,4 @@
-local weird_vibes_mode = true
+﻿local weird_vibes_mode = true
 local srRollMessages = {}
 local msRollMessages = {}
 local osRollMessages = {}
@@ -378,23 +378,23 @@ local function ExtractItemLinksFromMessage(message)
   return itemLinks
 end
 
--- no good, seems like masterLooterRaidID always nil?
-local function IsUnitMasterLooter(unit)
-  local lootMethod, masterLooterPartyID, masterLooterRaidID = GetLootMethod()
-  
-  if lootMethod == "master" then
-      if IsInRaid() then
-          -- In a raid, use the raid ID to check
-          return UnitIsUnit(unit, "raid" .. masterLooterRaidID)
-      elseif IsInGroup() then
-          -- In a party, use the party ID to check
-          return UnitIsUnit(unit, "party" .. masterLooterPartyID)
+local function IsSenderMasterLooter(sender)
+  local lootMethod, masterLooterPartyID = GetLootMethod()
+  if lootMethod == "master" and masterLooterPartyID then
+      if masterLooterPartyID == 0 then
+          -- Player is the Master Looter
+          return sender == UnitName("player")
+      else
+        local senderUID = "party" .. masterLooterPartyID
+        local masterLooterName = UnitName(senderUID)
+        return masterLooterName == sender
       end
   end
-  
   return false
 end
 
+
+local function HandleChatMessage(event, message, sender)
   if event == "CHAT_MSG_SYSTEM" and isRolling then
     if string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
@@ -416,8 +416,8 @@ end
       end
     end
   elseif event == "CHAT_MSG_RAID_WARNING" then
-    local lootMethod, _ = GetLootMethod()
-    if lootMethod == "master" then -- check if there is a loot master
+    local isSenderML = IsSenderMasterLooter(sender)
+    if isSenderML then -- only show if the sender is the master looter
       local links = ExtractItemLinksFromMessage(message)
       if tsize(links) == 1 then
         if string.find(message, "^No one has need:") or
