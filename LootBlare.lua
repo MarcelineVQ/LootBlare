@@ -395,13 +395,13 @@ end
 
 local function HandleChatMessage(event, message, sender)
   if IsSenderMasterLooter(sender) and (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
-    lb_print("message raid from ML detected")
+
     local _,_,duration = string.find(message, "You have (%d+) seconds to roll")
     duration = tonumber(duration)
     if duration and duration ~= FrameShownDuration then
       FrameShownDuration = duration
       -- The players get the new duration from the master looter after the first rolls
-      lb_print("Rolling duration set to " .. FrameShownDuration .. " seconds.")
+      lb_print("Rolling duration set to " .. FrameShownDuration .. " seconds. (set by Master Looter)")
     end
   elseif event == "CHAT_MSG_SYSTEM" and isRolling then
     if string.find(message, "rolls") and string.find(message, "(%d+)") then
@@ -478,8 +478,8 @@ SlashCmdList["LOOTBLARE"] = function(msg)
       itemRollFrame:Show()
     end
   elseif msg == "help" then
-    lb_print("LootBlare is a simple addon that displays item rolls in a frame.")
-    lb_print("Type /lb time <seconds> to set the duration the frame is shown.")
+    lb_print("LootBlare is a simple addon that displays and sort item rolls in a frame.")
+    lb_print("Type /lb time <seconds> to set the duration the frame is shown. This value will be automatically set by the master looter after the first rolls.")
     lb_print("Type /lb autoClose on/off to enable/disable auto closing the frame after the time has elapsed.")
     lb_print("Type /lb settings to see the current settings.")
   elseif msg == "settings" then
