@@ -1,4 +1,4 @@
-# Loot Blare 1.1.8
+# Loot Blare 1.1.9
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**. The original version of this addon can be found [here](https://github.com/MarcelineVQ/LootBlare)
 
@@ -42,6 +42,7 @@ Every time the master looter changes, the new master looter announces the roll t
 
 Changelog:
 
+- **1.1.9**: Add communication using CHAT_MSG_ADDON events
 - **1.1.8**: Remove announce message after each roll. Added time announce message after changing master loot
 - **1.1.7**: Added class colors, autoClose option, and config commands. Only show frame if the sender is the ML. Ignore rolls after the time has elapsed. Get FrameShowDuration from the ML.
 - **1.1.6**: Simple Buttons and Tooltips.

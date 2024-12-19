@@ -463,7 +463,7 @@ local function HandleChatMessage(event, message, sender)
     else
       SendAddonMessage(LB_PREFIX, LB_GET_DATA, "RAID")
     end
-  elseif event == "CHAT_MSG_ADDON" then
+  elseif event == "CHAT_MSG_ADDON" and arg1 == LB_PREFIX then
     local prefix, message, channel, sender = arg1, arg2, arg3, arg4
 
     -- Someone is asking for the master looter and his roll time
