@@ -394,7 +394,7 @@ end
 
 
 local function HandleChatMessage(event, message, sender)
-  if IsSenderMasterLooter(sender) and (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
+  if (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
     local _,_,duration = string.find(message, "Roll time set to (%d+) seconds")
     duration = tonumber(duration)
     if duration and duration ~= FrameShownDuration then
@@ -431,26 +431,23 @@ local function HandleChatMessage(event, message, sender)
     end
 
   elseif event == "CHAT_MSG_RAID_WARNING" then
-    local isSenderML = IsSenderMasterLooter(sender)
-    if isSenderML then -- only show if the sender is the master looter
-      local links = ExtractItemLinksFromMessage(message)
-      if tsize(links) == 1 then
-        if string.find(message, "^No one has need:") or
-           string.find(message,"has been sent to") or
-           string.find(message, " received ") then
-          itemRollFrame:Hide()
-          return
-        elseif string.find(message,"Rolling Cancelled") or -- usually a cancel is accidental in my experience
-               string.find(message,"seconds left to roll") or
-               string.find(message,"Rolling is now Closed") then
-          return
-        end
-        resetRolls()
-        UpdateTextArea(itemRollFrame)
-        time_elapsed = 0
-        isRolling = true
-        ShowFrame(itemRollFrame,FrameShownDuration,links[1])
+    local links = ExtractItemLinksFromMessage(message)
+    if tsize(links) == 1 then
+      if string.find(message, "^No one has need:") or
+          string.find(message,"has been sent to") or
+          string.find(message, " received ") then
+        itemRollFrame:Hide()
+        return
+      elseif string.find(message,"Rolling Cancelled") or -- usually a cancel is accidental in my experience
+              string.find(message,"seconds left to roll") or
+              string.find(message,"Rolling is now Closed") then
+        return
       end
+      resetRolls()
+      UpdateTextArea(itemRollFrame)
+      time_elapsed = 0
+      isRolling = true
+      ShowFrame(itemRollFrame,FrameShownDuration,links[1])
     end
   elseif event == "ADDON_LOADED" and arg1 == "LootBlare" then
     if FrameShownDuration == nil then FrameShownDuration = 15 end
