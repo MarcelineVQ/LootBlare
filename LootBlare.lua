@@ -9,6 +9,7 @@ local time_elapsed = 0
 local item_query = 0.5
 local times = 5
 local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
+local masterLooter = nil
 
 local BUTTON_WIDTH = 32
 local BUTTON_COUNT = 4
@@ -27,13 +28,17 @@ local RAID_CLASS_COLORS = {
   ["Warlock"] = "FF9482C9",
   ["Paladin"] = "FFF58CBA",
 }
-
 local ADDON_TEXT_COLOR= "FFEDD8BB"
 local DEFAULT_TEXT_COLOR = "FFFFFF00"
 local SR_TEXT_COLOR = "FFFF0000"
 local MS_TEXT_COLOR = "FFFFFF00"
 local OS_TEXT_COLOR = "FF00FF00"
 local TM_TEXT_COLOR = "FF00FFFF"
+
+local LB_PREFIX = "LootBlare"
+local LB_GET_DATA = "get data"
+local LB_SET_ML = "ML set to "
+local LB_SET_ROLL_TIME = "Roll time set to "
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage("|c" .. ADDON_TEXT_COLOR .. "LootBlare: " .. msg .. "|r")
@@ -372,7 +377,6 @@ local function ExtractItemLinksFromMessage(message)
   local itemLinks = {}
   -- This pattern matches the standard item link structure in WoW
   for link in string.gfind(message, "|c.-|H(item:.-)|h.-|h|r") do
-    -- lb_print(link)
     table.insert(itemLinks, link)
   end
   return itemLinks
@@ -381,17 +385,16 @@ end
 local function IsSenderMasterLooter(sender)
   local lootMethod, masterLooterPartyID = GetLootMethod()
   if lootMethod == "master" and masterLooterPartyID then
-      if masterLooterPartyID == 0 then
-          return sender == UnitName("player")
-      else
-        local senderUID = "party" .. masterLooterPartyID
-        local masterLooterName = UnitName(senderUID)
-        return masterLooterName == sender
-      end
+    if masterLooterPartyID == 0 then
+      return sender == UnitName("player")
+    else
+      local senderUID = "party" .. masterLooterPartyID
+      local masterLooterName = UnitName(senderUID)
+      return masterLooterName == sender
+    end
   end
   return false
 end
-
 
 local function HandleChatMessage(event, message, sender)
   if (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
@@ -405,10 +408,11 @@ local function HandleChatMessage(event, message, sender)
   elseif event == "CHAT_MSG_SYSTEM" then
     local _,_, newML = string.find(message, "(%S+) is now the loot master")
     if newML then
+      masterLooter = newML
       playerName = UnitName("player")
       -- if the player is the new master looter, announce the roll time
       if newML == playerName then
-        SendChatMessage("Roll time set to " .. FrameShownDuration .. " seconds.", "RAID")
+        SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. FrameShownDuration .. " seconds", "RAID")
       end
     elseif isRolling and string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
@@ -449,9 +453,40 @@ local function HandleChatMessage(event, message, sender)
       isRolling = true
       ShowFrame(itemRollFrame,FrameShownDuration,links[1])
     end
-  elseif event == "ADDON_LOADED" and arg1 == "LootBlare" then
+  elseif event == "ADDON_LOADED"then
     if FrameShownDuration == nil then FrameShownDuration = 15 end
     if FrameAutoClose == nil then FrameAutoClose = true end
+    if IsSenderMasterLooter(UnitName("player")) then
+      SendAddonMessage(LB_PREFIX, LB_SET_ML .. UnitName("player"), "RAID")
+      SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. FrameShownDuration, "RAID")
+      itemRollFrame:UnregisterEvent("ADDON_LOADED")
+    else
+      SendAddonMessage(LB_PREFIX, LB_GET_DATA, "RAID")
+    end
+  elseif event == "CHAT_MSG_ADDON" then
+    local prefix, message, channel, sender = arg1, arg2, arg3, arg4
+
+    -- Someone is asking for the master looter and his roll time
+    if message == LB_GET_DATA and IsSenderMasterLooter(UnitName("player")) then
+      masterLooter = UnitName("player")
+      SendAddonMessage(LB_PREFIX, LB_SET_ML .. masterLooter, "RAID")
+      SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. FrameShownDuration, "RAID")
+    end
+
+    -- Someone is setting the master looter
+    if string.find(message, LB_SET_ML) then
+      local _,_, newML = string.find(message, "ML set to (%S+)")
+      masterLooter = newML
+    end
+    -- Someone is setting the roll time
+    if string.find(message, LB_SET_ROLL_TIME) then
+      local _,_,duration = string.find(message, "Roll time set to (%d+)")
+      duration = tonumber(duration)
+      if duration and duration ~= FrameShownDuration then
+        FrameShownDuration = duration
+        lb_print("Roll time set to comunication" .. FrameShownDuration .. " seconds.")
+      end
+    end
   end
 end
 
@@ -460,6 +495,7 @@ itemRollFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID_WARNING")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID_LEADER")
+itemRollFrame:RegisterEvent("CHAT_MSG_ADDON")
 itemRollFrame:SetScript("OnEvent", function () HandleChatMessage(event,arg1,arg2) end)
 
 -- Register the slash command
@@ -482,6 +518,7 @@ SlashCmdList["LOOTBLARE"] = function(msg)
   elseif msg == "settings" then
     lb_print("Frame shown duration: " .. FrameShownDuration .. " seconds.")
     lb_print("Auto closing: " .. (FrameAutoClose and "on" or "off"))
+    lb_print("Master Looter: " .. (masterLooter or "unknown"))
   elseif string.find(msg, "time") then
     local _,_,newDuration = string.find(msg, "time (%d+)")
     newDuration = tonumber(newDuration)
@@ -489,7 +526,7 @@ SlashCmdList["LOOTBLARE"] = function(msg)
       FrameShownDuration = newDuration
       lb_print("Roll time set to " .. newDuration .. " seconds.")
       if IsSenderMasterLooter(UnitName("player")) then
-        SendChatMessage("Roll time set to " .. newDuration .. " seconds.", "RAID")
+        SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. newDuration, "RAID")
       end
     else
       lb_print("Invalid duration. Please enter a number greater than 0.")
