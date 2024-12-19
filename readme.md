@@ -6,7 +6,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
 ### Features:
 
-- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls.
+- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls. The frame will appear only if the sender is the ML
 
 - **Roll Sorting**: Rolls are automatically categorized and sorted by type to streamline loot distribution. Only the first roll submitted by each player is considered; subsequent rolls are ignored.
 
@@ -33,6 +33,8 @@ Every time the master looter changes, the new master looter announces the roll t
 
 - **Configuration Commands**: For a full list of configuration options, type:  
   `/help`
+
+- **Communication**: The addon uses the addon channel to update data about roll time and the current master looter. For example, if the player logs in after the ML has been set, he will automatically ask who the ML is and the ML will answer. Also, the ML will announce that he is the ML on add-on loading. All of this is invisible to the player
 
 ### The (moveable) frame in game:
 
