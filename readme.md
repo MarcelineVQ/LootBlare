@@ -6,7 +6,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
 ### Features:
 
-- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls. The frame only appears when the sender of the raid warning is the master looter.
+- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls.
 
 - **Roll Sorting**: Rolls are automatically categorized and sorted by type to streamline loot distribution. Only the first roll submitted by each player is considered; subsequent rolls are ignored.
 
