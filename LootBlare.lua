@@ -434,9 +434,10 @@ local function HandleChatMessage(event, message, sender)
       end
     end
 
-  elseif event == "CHAT_MSG_RAID_WARNING" then
+  elseif event == "CHAT_MSG_RAID_WARNING" and sender == masterLooter then
     local links = ExtractItemLinksFromMessage(message)
     if tsize(links) == 1 then
+      -- these if are not being used RN. I'm just leaving them here for future reference
       if string.find(message, "^No one has need:") or
           string.find(message,"has been sent to") or
           string.find(message, " received ") then
@@ -484,7 +485,7 @@ local function HandleChatMessage(event, message, sender)
       duration = tonumber(duration)
       if duration and duration ~= FrameShownDuration then
         FrameShownDuration = duration
-        lb_print("Roll time set to comunication" .. FrameShownDuration .. " seconds.")
+        lb_print("Roll time set to " .. FrameShownDuration .. " seconds.")
       end
     end
   end
