@@ -1,4 +1,4 @@
-# Loot Blare 1.1.8
+# Loot Blare 1.1.9
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**. The original version of this addon can be found [here](https://github.com/MarcelineVQ/LootBlare)
 
@@ -6,7 +6,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
 ### Features:
 
-- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls.
+- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls. The frame will appear only if the sender is the ML
 
 - **Roll Sorting**: Rolls are automatically categorized and sorted by type to streamline loot distribution. Only the first roll submitted by each player is considered; subsequent rolls are ignored.
 
@@ -34,12 +34,15 @@ Every time the master looter changes, the new master looter announces the roll t
 - **Configuration Commands**: For a full list of configuration options, type:  
   `/help`
 
+- **Communication**: The addon uses the addon channel to update data about roll time and the current master looter. For example, if the player logs in after the ML has been set, he will automatically ask who the ML is and the ML will answer. Also, the ML will announce that he is the ML on add-on loading. All of this is invisible to the player
+
 ### The (moveable) frame in game:
 
 ![LootBlare Frame](./lootblareframe.png)
 
 Changelog:
 
+- **1.1.9**: Add communication using CHAT_MSG_ADDON events
 - **1.1.8**: Remove announce message after each roll. Added time announce message after changing master loot
 - **1.1.7**: Added class colors, autoClose option, and config commands. Only show frame if the sender is the ML. Ignore rolls after the time has elapsed. Get FrameShowDuration from the ML.
 - **1.1.6**: Simple Buttons and Tooltips.
