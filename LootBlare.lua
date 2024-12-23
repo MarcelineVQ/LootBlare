@@ -429,7 +429,6 @@ local function HandleChatMessage(event, message, sender)
         elseif maxRoll == "50" then
           table.insert(tmogRollMessages, message)
         end
-        time_elapsed = 0
         UpdateTextArea(itemRollFrame)
       end
     end
