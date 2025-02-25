@@ -10,6 +10,10 @@ local item_query = 0.5
 local times = 5
 local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
 local masterLooter = nil
+local srRollCap = 101
+local msRollCap = 100
+local osRollCap = 99
+local tmogRollCap = 50
 
 local BUTTON_WIDTH = 32
 local BUTTON_COUNT = 4
@@ -74,13 +78,13 @@ local function colorMsg(message)
   classColor = RAID_CLASS_COLORS[class]
   textColor = DEFAULT_TEXT_COLOR
 
-  if string.find(msg, "-101") then
+  if string.find(msg, "-"..srRollCap) then
     textColor = SR_TEXT_COLOR
-  elseif string.find(msg, "-100") then
+  elseif string.find(msg, "-"..msRollCap) then
     textColor = MS_TEXT_COLOR
-  elseif string.find(msg, "-99") then
+  elseif string.find(msg, "-"..osRollCap) then
     textColor = OS_TEXT_COLOR
-  elseif string.find(msg, "-50") then
+  elseif string.find(msg, "-"..tmogRollCap) then
     textColor = TM_TEXT_COLOR
   end
 
@@ -198,10 +202,10 @@ local function CreateItemRollFrame()
   frame:SetScript("OnDragStart", function () frame:StartMoving() end)
   frame:SetScript("OnDragStop", function () frame:StopMovingOrSizing() end)
   CreateCloseButton(frame)
-  CreateActionButton(frame, "SR", "Roll for Soft Reserve", 1, function() RandomRoll(1,101) end)
-  CreateActionButton(frame, "MS", "Roll for Main Spec", 2, function() RandomRoll(1,100) end)
-  CreateActionButton(frame, "OS", "Roll for Off Spec", 3, function() RandomRoll(1,99) end)
-  CreateActionButton(frame, "TM", "Roll for Transmog", 4, function() RandomRoll(1,50) end)
+  CreateActionButton(frame, "SR", "Roll for Soft Reserve", 1, function() RandomRoll(1,srRollCap) end)
+  CreateActionButton(frame, "MS", "Roll for Main Spec", 2, function() RandomRoll(1,msRollCap) end)
+  CreateActionButton(frame, "OS", "Roll for Off Spec", 3, function() RandomRoll(1,osRollCap) end)
+  CreateActionButton(frame, "TM", "Roll for Transmog", 4, function() RandomRoll(1,tmogRollCap) end)
   frame:Hide()
 
   return frame
@@ -294,13 +298,14 @@ local function ShowFrame(frame,duration,item)
     item_query = item_query - arg1
     if frame.timerText then frame.timerText:SetText(format("%.1f", duration - time_elapsed)) end
     if time_elapsed >= duration then
+      frame.timerText:SetText("0.0")
       frame:SetScript("OnUpdate", nil)
       time_elapsed = 0
       item_query = 1.5
       times = 3
       rollMessages = {}
       isRolling = false
-      if FrameAutoClose then frame:Hide() end
+      if FrameAutoClose and not (masterLooter == UnitName("player")) then frame:Hide() end
     end
     if times > 0 and item_query < 0 and not CheckItem(item) then
       times = times - 1
@@ -405,6 +410,19 @@ local function HandleChatMessage(event, message, sender)
       -- The players get the new duration from the master looter after the first rolls
       lb_print("Rolling duration set to " .. FrameShownDuration .. " seconds. (set by Master Looter)")
     end
+  elseif event == "CHAT_MSG_LOOT" then
+    -- Hide frame for masterlooter when loot is awarded
+    if not ItemRollFrame:IsVisible() or masterLooter ~= UnitName("player") then return end
+
+    local _,_,who = string.find(message, "^(%a+) receive.? loot:")
+    local links = ExtractItemLinksFromMessage(message)
+
+    if who and tsize(links) == 1 then
+      if this.itemLink == links[1] then
+        resetRolls()
+        this:Hide()
+      end
+    end
   elseif event == "CHAT_MSG_SYSTEM" then
     local _,_, newML = string.find(message, "(%S+) is now the loot master")
     if newML then
@@ -420,13 +438,13 @@ local function HandleChatMessage(event, message, sender)
         roll = tonumber(roll)
         rollers[roller] = 1
         message = { roller = roller, roll = roll, msg = message, class = GetClassOfRoller(roller) }
-        if maxRoll == "101" then
+        if maxRoll == tostring(srRollCap) then
           table.insert(srRollMessages, message)
-        elseif maxRoll == "100" then
+        elseif maxRoll == tostring(msRollCap) then
           table.insert(msRollMessages, message)
-        elseif maxRoll == "99" then
+        elseif maxRoll == tostring(osRollCap) then
           table.insert(osRollMessages, message)
-        elseif maxRoll == "50" then
+        elseif maxRoll == tostring(tmogRollCap) then
           table.insert(tmogRollMessages, message)
         end
         UpdateTextArea(itemRollFrame)
@@ -436,15 +454,11 @@ local function HandleChatMessage(event, message, sender)
   elseif event == "CHAT_MSG_RAID_WARNING" and sender == masterLooter then
     local links = ExtractItemLinksFromMessage(message)
     if tsize(links) == 1 then
-      -- these if are not being used RN. I'm just leaving them here for future reference
-      if string.find(message, "^No one has need:") or
-          string.find(message,"has been sent to") or
-          string.find(message, " received ") then
-        itemRollFrame:Hide()
-        return
-      elseif string.find(message,"Rolling Cancelled") or -- usually a cancel is accidental in my experience
-              string.find(message,"seconds left to roll") or
-              string.find(message,"Rolling is now Closed") then
+      -- interaction with other looting addons
+      if string.find(message, "^No one has nee") or
+        -- prevents reblaring on loot award
+        string.find(message,"has been sent to") or
+        string.find(message, " received ") then
         return
       end
       resetRolls()
@@ -496,6 +510,7 @@ itemRollFrame:RegisterEvent("CHAT_MSG_RAID_WARNING")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID_LEADER")
 itemRollFrame:RegisterEvent("CHAT_MSG_ADDON")
+itemRollFrame:RegisterEvent("CHAT_MSG_LOOT")
 itemRollFrame:SetScript("OnEvent", function () HandleChatMessage(event,arg1,arg2) end)
 
 -- Register the slash command
@@ -504,6 +519,7 @@ SLASH_LOOTBLARE2 = '/lb'
 
 -- Command handler
 SlashCmdList["LOOTBLARE"] = function(msg)
+  msg = string.lower(msg)
   if msg == "" then
     if itemRollFrame:IsVisible() then
       itemRollFrame:Hide()
@@ -531,12 +547,12 @@ SlashCmdList["LOOTBLARE"] = function(msg)
     else
       lb_print("Invalid duration. Please enter a number greater than 0.")
     end
-  elseif string.find(msg, "autoClose") then
-    local _,_,autoClose = string.find(msg, "autoClose (%a+)")
-    if autoClose == "on" then
+  elseif string.find(msg, "autoclose") then
+    local _,_,autoClose = string.find(msg, "autoclose (%a+)")
+    if autoClose == "on" or autoClose == "true" then
       lb_print("Auto closing enabled.")
       FrameAutoClose = true
-    elseif autoClose == "off" then
+    elseif autoClose == "off" or autoClose == "false" then
       lb_print("Auto closing disabled.")
       FrameAutoClose = false
     else
