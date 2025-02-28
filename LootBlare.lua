@@ -467,6 +467,8 @@ local function HandleChatMessage(event, message, sender)
       isRolling = true
       ShowFrame(itemRollFrame,FrameShownDuration,links[1])
     end
+  elseif event == "PLAYER_ENTERING_WORLD" then
+    SendAddonMessage(LB_PREFIX, LB_GET_DATA, "RAID") -- fetch ML info
   elseif event == "ADDON_LOADED"then
     if FrameShownDuration == nil then FrameShownDuration = 15 end
     if FrameAutoClose == nil then FrameAutoClose = true end
@@ -511,6 +513,7 @@ itemRollFrame:RegisterEvent("CHAT_MSG_RAID")
 itemRollFrame:RegisterEvent("CHAT_MSG_RAID_LEADER")
 itemRollFrame:RegisterEvent("CHAT_MSG_ADDON")
 itemRollFrame:RegisterEvent("CHAT_MSG_LOOT")
+itemRollFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 itemRollFrame:SetScript("OnEvent", function () HandleChatMessage(event,arg1,arg2) end)
 
 -- Register the slash command
