@@ -1,10 +1,6 @@
 ﻿local state = {
   weird_vibes_mode = true,
-  srRollMessages = {},
-  msRollMessages = {},
-  osRollMessages = {},
-  tmogRollMessages = {},
-  otherRollMessages = {},
+  rollMessages = {},
   rollers = {},
   isRolling = false,
   time_elapsed = 0,
@@ -16,6 +12,7 @@
   msRollCap = 100,
   osRollCap = 99,
   tmogRollCap = 50,
+  MLRollDuration = 15,
 }
 
 local BUTTON_WIDTH = 32
@@ -55,28 +52,32 @@ local function lb_print(msg)
 end
 
 local function resetRolls()
-  state.srRollMessages = {}
-  state.msRollMessages = {}
-  state.osRollMessages = {}
-  state.tmogRollMessages = {}
-  state.otherRollMessages = {}
+  state.rollMessages = {}
   state.rollers = {}
 end
 
 local function sortRolls()
-  table.sort(state.srRollMessages, function(a, b)
-    return a.roll > b.roll
-  end)
-  table.sort(state.msRollMessages, function(a, b)
-    return a.roll > b.roll
-  end)
-  table.sort(state.osRollMessages, function(a, b)
-    return a.roll > b.roll
-  end)
-  table.sort(state.tmogRollMessages, function(a, b)
-    return a.roll > b.roll
-  end)
-  table.sort(state.otherRollMessages, function(a, b)
+  table.sort(state.rollMessages, function(a, b)
+    -- Primary grouping: All entries with minRoll==1 come first.
+    if a.minRoll == 1 and b.minRoll ~= 1 then
+      return true
+    elseif a.minRoll ~= 1 and b.minRoll == 1 then
+      return false
+    end
+
+    -- Now both entries are in the same overall minRoll group.
+
+    -- Secondary: sort by maxRoll descending.
+    if a.maxRoll ~= b.maxRoll then
+      return a.maxRoll > b.maxRoll
+    end
+
+    -- Tertiary: if we are in the non-minRoll==1 group, sort by minRoll descending.
+    if a.minRoll ~= b.minRoll then
+      return a.minRoll > b.minRoll
+    end
+
+    -- Finally: sort by the actual roll descending.
     return a.roll > b.roll
   end)
 end
@@ -98,8 +99,18 @@ local function formatMsg(message)
   end
 
   local c_class = format("|c%s%-12s|r", classColor, message.roller)
+  local max_or_special
+  if message.minRoll == 1 and message.maxRoll == state.srRollCap then
+    max_or_special = " SR"
+  elseif message.minRoll == 1 and message.maxRoll == state.msRollCap then
+    max_or_special = " MS"
+  elseif message.minRoll == 1 and message.maxRoll == state.osRollCap then
+    max_or_special = " OS"
+  elseif message.minRoll == 1 and message.maxRoll == state.tmogRollCap then
+    max_or_special = " TM"
+  end
   local c_min = message.minRoll == 1 and "" or ("|cFFFF0000" .. message.minRoll .. "|c" .. textColor .. "-")
-  local c_end = format("(%s%d)", c_min, tostring(message.maxRoll))
+  local c_end = max_or_special or format("(%s%d)", c_min, tostring(message.maxRoll))
 
   return format("%s|c%s%-3s%s|r", c_class, textColor, message.roll, c_end)
 end
@@ -308,8 +319,9 @@ local function ShowFrame(frame,duration,item)
   frame:SetScript("OnUpdate", function()
     state.time_elapsed = state.time_elapsed + arg1
     state.item_query = state.item_query - arg1
-    if frame.timerText then frame.timerText:SetText(format("%.1f", duration - state.time_elapsed)) end
-    if state.time_elapsed >= duration then
+    local delta = duration - state.time_elapsed
+    if frame.timerText then frame.timerText:SetText(format("%.1f", delta > 0 and delta or 0)) end
+    if state.time_elapsed >= max(duration,FrameShownDuration) then
       frame.timerText:SetText("0.0")
       frame:SetScript("OnUpdate", nil)
       state.time_elapsed = 0
@@ -364,31 +376,7 @@ local function UpdateTextArea(frame)
 
   sortRolls()
 
-  for i, v in ipairs(state.srRollMessages) do
-    if count >= 5 then break end
-    colored_msg = v.msg
-    text = text .. formatMsg(v) .. "\n"
-    count = count + 1
-  end
-  for i, v in ipairs(state.msRollMessages) do
-    if count >= 6 then break end
-    colored_msg = v.msg
-    text = text .. formatMsg(v) .. "\n"
-    count = count + 1
-  end
-  for i, v in ipairs(state.osRollMessages) do
-    if count >= 7 then break end
-    colored_msg = v.msg
-    text = text .. formatMsg(v) .. "\n"
-    count = count + 1
-  end
-  for i, v in ipairs(state.tmogRollMessages) do
-    if count >= 8 then break end
-    colored_msg = v.msg
-    text = text .. formatMsg(v) .. "\n"
-    count = count + 1
-  end
-  for i, v in ipairs(state.otherRollMessages) do
+  for i, v in ipairs(state.rollMessages) do
     if count >= 9 then break end
     colored_msg = v.msg
     text = text .. formatMsg(v) .. "\n"
@@ -425,10 +413,10 @@ function itemRollFrame:HandleChatMessage(event, message, sender)
   if (event == "CHAT_MSG_RAID" or event == "CHAT_MSG_RAID_LEADER") then
     local _,_,duration = string.find(message, "Roll time set to (%d+) seconds")
     duration = tonumber(duration)
-    if duration and duration ~= FrameShownDuration then
-      FrameShownDuration = duration
+    if duration and duration ~= state.MLRollDuration then
+      state.MLRollDuration = duration
       -- The players get the new duration from the master looter after the first rolls
-      lb_print("Rolling duration set to " .. FrameShownDuration .. " seconds. (set by Master Looter)")
+      lb_print("Rolling duration set to " .. state.MLRollDuration .. " seconds. (set by Master Looter)")
     end
   elseif event == "CHAT_MSG_LOOT" then
     -- Hide frame for masterlooter when loot is awarded
@@ -454,23 +442,14 @@ function itemRollFrame:HandleChatMessage(event, message, sender)
       end
     elseif state.isRolling and string.find(message, "rolls") and string.find(message, "(%d+)") then
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
-      if roller and roll and state.rollers[roller] == nil then
+      if roller and roll and (state.rollers[roller] == nil or LB_DEBUG) then
         roll = tonumber(roll)
         minRoll = tonumber(minRoll)
         maxRoll = tonumber(maxRoll)
         state.rollers[roller] = 1
         message = { roller = roller, roll = roll, minRoll = minRoll, maxRoll = maxRoll, msg = message, class = GetClassOfRoller(roller) }
-        if minRoll ~= 1 then
-          table.insert(state.otherRollMessages, message)
-        elseif maxRoll > state.msRollCap then
-          table.insert(state.srRollMessages, message)
-        elseif maxRoll == state.msRollCap then
-          table.insert(state.msRollMessages, message)
-        elseif maxRoll == state.osRollCap then
-          table.insert(state.osRollMessages, message)
-        elseif maxRoll < state.osRollCap then
-          table.insert(state.tmogRollMessages, message)
-        end
+
+        table.insert(state.rollMessages, message)
         UpdateTextArea(itemRollFrame)
       end
     end
@@ -489,7 +468,7 @@ function itemRollFrame:HandleChatMessage(event, message, sender)
       UpdateTextArea(itemRollFrame)
       state.time_elapsed = 0
       state.isRolling = true
-      ShowFrame(itemRollFrame,FrameShownDuration,links[1])
+      ShowFrame(itemRollFrame,state.MLRollDuration,links[1])
     end
   elseif event == "CHAT_MSG_ADDON" and arg1 == LB_PREFIX then
     local prefix, message, channel, sender = arg1, arg2, arg3, arg4
@@ -510,9 +489,15 @@ function itemRollFrame:HandleChatMessage(event, message, sender)
     if string.find(message, LB_SET_ROLL_TIME) then
       local _,_,duration = string.find(message, "Roll time set to (%d+)")
       duration = tonumber(duration)
-      if duration and duration ~= FrameShownDuration then
-        FrameShownDuration = duration
-        lb_print("Roll time set to " .. FrameShownDuration .. " seconds.")
+      if duration and duration ~= state.MLRollDuration then
+        state.MLRollDuration = duration
+        if not IsSenderMasterLooter(UnitName("player")) then
+          local roll_string = "Roll time set to " .. state.MLRollDuration .. " seconds."
+          if state.MLRollDuration ~= FrameShownDuration then
+            roll_string = roll_string .. " Your display time is " .. FrameShownDuration .." seconds."
+          end
+          lb_print(roll_string)
+        end
       end
     end
   end
@@ -523,6 +508,8 @@ function itemRollFrame:ADDON_LOADED(addon)
 
   if FrameShownDuration == nil then FrameShownDuration = 15 end
   if FrameAutoClose == nil then FrameAutoClose = true end
+  state.MLRollDuration = FrameShownDuration
+
   if IsSenderMasterLooter(UnitName("player")) then
     SendAddonMessage(LB_PREFIX, LB_SET_ML .. UnitName("player"), "RAID")
     SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. FrameShownDuration, "RAID")
@@ -568,7 +555,7 @@ SlashCmdList["LOOTBLARE"] = function(msg)
     end
   elseif msg == "help" then
     lb_print("LootBlare is a simple addon that displays and sort item rolls in a frame.")
-    lb_print("Type /lb time <seconds> to set the duration the frame is shown. This value will be automatically set by the master looter after the first rolls.")
+    lb_print("Type /lb time <seconds> to set the duration the frame is shown.")
     lb_print("Type /lb autoClose on/off to enable/disable auto closing the frame after the time has elapsed.")
     lb_print("Type /lb settings to see the current settings.")
   elseif msg == "settings" then
