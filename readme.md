@@ -1,6 +1,7 @@
-# Loot Blare 1.1.10
+# Loot Blare 1.1.10.1
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**.
+This is a version edited to fit Kulový Blesk soft reserve system.
 
 This addon displays a pop-up frame showing items and rolls when a single uncommon+ item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow.
 
@@ -42,6 +43,7 @@ Every time the master looter changes, the new master looter announces the roll t
 
 Changelog:
 
+- **1.1.10.1**: Added Kulový blesk SR import and bonus point support
 - **1.1.10**: Prevent blare window from closing due to timeout for the Master Looter
 - **1.1.9**: Add communication using CHAT_MSG_ADDON events
 - **1.1.8**: Remove announce message after each roll. Added time announce message after changing master loot
