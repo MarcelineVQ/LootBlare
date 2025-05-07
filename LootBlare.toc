@@ -1,8 +1,10 @@
 ## Interface: 11200
 ## Title: LootBlare 1.1.7
-## Author: Ehawne, Sivent, Gulolio
+## Author: Ehawne, Sivent, Gulolio, Martinez
 ## Version: 1.1.7
 ## Notes: Make loot rolls obvious
 ## SavedVariables:FrameShownDuration, FrameAutoClose
 
 LootBlare.lua
+LootBlareMinimap.lua
+LootBlareImportFrame.xml

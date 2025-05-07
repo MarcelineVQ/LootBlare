@@ -10,10 +10,18 @@ local item_query = 0.5
 local times = 5
 local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
 local masterLooter = nil
-local srRollCap = 101
+local srRollCap = 100
 local msRollCap = 100
 local osRollCap = 99
-local tmogRollCap = 50
+local tmogRollCap = 98
+
+local rollBonuses = {
+  ["Martinez"] = { ["Soulseeker"] = 10 },
+  ["Nenapadna"] = { ["Nightslayer Bracelets"] = 15 }
+}
+local currentItem = ""
+local importText = "" -- will hold the imported text
+
 
 local BUTTON_WIDTH = 32
 local BUTTON_COUNT = 4
@@ -34,7 +42,8 @@ local RAID_CLASS_COLORS = {
 }
 local ADDON_TEXT_COLOR= "FFEDD8BB"
 local DEFAULT_TEXT_COLOR = "FFFFFF00"
-local SR_TEXT_COLOR = "FFFF0000"
+--local SR_TEXT_COLOR = "FFFF0000"
+local SR_TEXT_COLOR = "FFFFFF00"
 local MS_TEXT_COLOR = "FFFFFF00"
 local OS_TEXT_COLOR = "FF00FF00"
 local TM_TEXT_COLOR = "FF00FFFF"
@@ -43,6 +52,8 @@ local LB_PREFIX = "LootBlare"
 local LB_GET_DATA = "get data"
 local LB_SET_ML = "ML set to "
 local LB_SET_ROLL_TIME = "Roll time set to "
+
+UIPanelWindows["LootBlareImportFrame"] = { area = "center", pushable = 1 }
 
 local function lb_print(msg)
   DEFAULT_CHAT_FRAME:AddMessage("|c" .. ADDON_TEXT_COLOR .. "LootBlare: " .. msg .. "|r")
@@ -184,8 +195,8 @@ end
 
 local function CreateItemRollFrame()
   local frame = CreateFrame("Frame", "ItemRollFrame", UIParent)
-  frame:SetWidth(200) -- Adjust size as needed
-  frame:SetHeight(220)
+  frame:SetWidth(320) -- Adjust size as needed
+  frame:SetHeight(250)
   frame:SetPoint("CENTER",UIParent,"CENTER",0,0) -- Position at center of the parent frame
   frame:SetBackdrop({
       bgFile = "Interface/Tooltips/UI-Tooltip-Background",
@@ -384,6 +395,13 @@ local function ExtractItemLinksFromMessage(message)
   for link in string.gfind(message, "|c.-|H(item:.-)|h.-|h|r") do
     table.insert(itemLinks, link)
   end
+
+  local iterator = string.gfind(message, "|c.-|Hitem:.-|h%[([^%]]+)%]|h|r")
+  local itemName = iterator()
+  if itemName then
+    currentItem = itemName
+  end
+
   return itemLinks
 end
 
@@ -399,6 +417,76 @@ local function IsSenderMasterLooter(sender)
     end
   end
   return false
+end
+
+function HandleEditBox(editBox)
+  local scrollBar = getglobal(editBox:GetParent():GetName().."ScrollBar")
+  editBox:GetParent():UpdateScrollChildRect();
+
+  local _, max = scrollBar:GetMinMaxValues();
+  scrollBar.prevMaxValue = scrollBar.prevMaxValue or max
+
+  if math.abs(scrollBar.prevMaxValue - scrollBar:GetValue()) <= 1 then
+      -- if scroll is down and add new line then move scroll
+      scrollBar:SetValue(max);
+  end
+  if max ~= scrollBar.prevMaxValue then
+      -- save max value
+      scrollBar.prevMaxValue = max
+  end
+end
+
+local function SplitBySemicolon(text)
+  local result = {}
+  local index = 1
+
+  for entry in string.gfind(text, "([^;]+)") do
+    result[index] = entry
+    index = index + 1
+  end
+
+  return result
+end
+
+function LootBlare_ImportData(text)
+  rollBonuses = {} -- Clear the existing table 
+
+  if not text or text == "" then
+    print("[DEBUG]: No text received or text is empty!")
+    return
+  end
+
+  --print("[DEBUG]: Import started")
+
+  local lines = SplitBySemicolon(text)
+  local imported = 0
+
+  for _, line in ipairs(lines) do
+    -- Trim whitespace
+    line = gsub(line, "^%s*(.-)%s*$", "%1")
+
+    local player, itemID, bonus = nil, nil, nil
+    for entry in string.gfind(line, "([^|]+)") do
+      if not player then
+        player = entry
+      elseif not itemID then
+        itemID = entry
+      elseif not bonus then
+        bonus = entry
+      end
+    end
+    --print("[DEBUG]: " .. player .. " " .. itemID .. " " .. bonus)
+    if player and itemID and bonus then
+      if not rollBonuses[player] then
+        rollBonuses[player] = {}
+      end
+      rollBonuses[player][itemID] = bonus
+      imported = imported + 1
+    else
+      DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Skipped malformed line: " .. line)
+    end
+  end
+  --print("[DEBUG]: Import complete.")
 end
 
 local function HandleChatMessage(event, message, sender)
@@ -433,11 +521,50 @@ local function HandleChatMessage(event, message, sender)
         SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. FrameShownDuration .. " seconds", "RAID")
       end
     elseif isRolling and string.find(message, "rolls") and string.find(message, "(%d+)") then
+      --print("[DEBUG] Received message: " .. message)
+      --print("[DEBUG] isRolling = " .. tostring(isRolling))
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
+      -- print("[DEBUG] Parsed roll: roller=" .. tostring(roller) ..
+      --", roll=" .. tostring(roll) ..
+      --", minRoll=" .. tostring(minRoll) ..
+      --", maxRoll=" .. tostring(maxRoll))
       if roller and roll and rollers[roller] == nil then
+        --print("[DEBUG] New roller:" .. roller)
         roll = tonumber(roll)
         rollers[roller] = 1
-        message = { roller = roller, roll = roll, msg = message, class = GetClassOfRoller(roller) }
+
+        if type(rollBonuses[roller]) == "table" then
+          for item, bonus in pairs(rollBonuses[roller]) do
+            --print("[DEBUG]: " .. roller .. " -> " .. item .. " = " .. bonus)
+          end
+        else
+          --print("[DEBUG]: No bonuses found for " .. roller)
+        end
+        
+
+        local bonus = 0
+        local class = GetClassOfRoller(roller)
+        local itemLink = itemRollFrame and itemRollFrame.itemLink
+        local msg = message
+        if itemLink then 
+          --print("[DEBUG] itemLink exists:".. itemLink)
+          if not itemRollFrame or not itemRollFrame.itemLink then
+            print("[DEBUG] itemRollFrame or itemLink is nil")
+          end
+          --print("[DEBUG] currentItem:" .. currentItem)
+          if maxRoll == tostring(msRollCap) then
+            -- Check if the player's name and item name are in the roll bonuses
+            if currentItem and rollBonuses[roller] and rollBonuses[roller][currentItem] then
+              --print("[DEBUG] Bonus found for roller=" .. tostring(roller) ..
+              --", itemName=" .. tostring(currentItem) ..
+              --" -> bonus=" .. tostring(rollBonuses[roller] and rollBonuses[roller][currentItem]))
+              bonus = tonumber(rollBonuses[roller][currentItem]) or 0
+              roll = roll + bonus
+              msg = msg .. " + " .. bonus .. " = " .. roll -- Append bonus to message for display
+            end
+          end
+        end
+        message = { roller = roller, roll = roll, msg = msg, class = class }
         if maxRoll == tostring(srRollCap) then
           table.insert(srRollMessages, message)
         elseif maxRoll == tostring(msRollCap) then
@@ -447,6 +574,8 @@ local function HandleChatMessage(event, message, sender)
         elseif maxRoll == tostring(tmogRollCap) then
           table.insert(tmogRollMessages, message)
         end
+        --print("[DEBUG] Final roll inserted with bonus =" .. tostring(bonus) .. "->" .. tostring(roll))
+        --print("[DEBUG] Final message:"  .. msg)
         UpdateTextArea(itemRollFrame)
       end
     end
@@ -534,10 +663,13 @@ SlashCmdList["LOOTBLARE"] = function(msg)
     lb_print("Type /lb time <seconds> to set the duration the frame is shown. This value will be automatically set by the master looter after the first rolls.")
     lb_print("Type /lb autoClose on/off to enable/disable auto closing the frame after the time has elapsed.")
     lb_print("Type /lb settings to see the current settings.")
+    lb_print("Type /lb import to open import window.")
   elseif msg == "settings" then
     lb_print("Frame shown duration: " .. FrameShownDuration .. " seconds.")
     lb_print("Auto closing: " .. (FrameAutoClose and "on" or "off"))
     lb_print("Master Looter: " .. (masterLooter or "unknown"))
+  elseif msg == "import" then
+    LootBlareImportFrame:Show()
   elseif string.find(msg, "time") then
     local _,_,newDuration = string.find(msg, "time (%d+)")
     newDuration = tonumber(newDuration)
