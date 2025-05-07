@@ -20,7 +20,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
   - **SR (Soft Reserve)**: Rolls from 1 to 101.
   - **MS (Main Spec)**: Rolls from 1 to 100.
   - **OS (Off Spec)**: Rolls from 1 to 99.
-  - **TM (Transmog)**: Rolls from 1 to 50.
+  - **TM (Transmog)**: Rolls from 1 to 98.
 
 - **Frame Duration**: By default, the frame stays on screen for `15 seconds` unless a new roll occurs. Adjust this duration with:  
   `/lootblare 'time <number>` or `/lb 'time <number>`
