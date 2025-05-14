@@ -6,40 +6,18 @@ This is a version edited to fit Kulový Blesk soft reserve system.
 This addon displays a pop-up frame showing items and rolls when a single uncommon+ item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow.
 
 ### Features:
+- Soft Reserve + import
+  You can import your SR as a CSV file in this format:
+  Name|Item|Points;
 
-- **Start Rolling**: To start the rolling process, send the item as a **Raid Warning**. This will trigger the frame to appear and display rolls. The frame will appear only if the sender is the ML
+- Sync between addon users (WIP)
+  Whenever master looter imports a new SR or a new member joins after the SR was uploaded the addon uses a private channel to sync the SR list
 
-- **Roll Sorting**: Rolls are automatically categorized and sorted by type to streamline loot distribution. Only the first roll submitted by each player is considered; subsequent rolls are ignored.
+- Soft Reserve distinguishment (WIP)
+  Whenever someone rolls on SR their roll will be distinguished by a different colour
 
-- **Show/Hide Frame**: To show or hide the frame, type:  
-  `/lootblare` or `/lb`  
-  If the frame is active, you can move it by dragging.
-
-- **Easy Roll Buttons**: For raiders, the addon provides convenient roll buttons:
-
-  - **SR (Soft Reserve)**: Rolls from 1 to 101.
-  - **MS (Main Spec)**: Rolls from 1 to 100.
-  - **OS (Off Spec)**: Rolls from 1 to 99.
-  - **TM (Transmog)**: Rolls from 1 to 98.
-
-- **Frame Duration**: By default, the frame stays on screen for `15 seconds` unless a new roll occurs. Adjust this duration with:  
-  `/lootblare 'time <number>` or `/lb 'time <number>`
-
-  Example: `/lootblare 'time 30` to set the duration to 30 seconds.
-
-Every time the master looter changes, the new master looter announces the roll time defined. This value is also announced after updating the value with `/lb time <number>`. This announced value is applied to the entire raid to ensure consistency.
-
-- **Auto-Close**: The frame closes automatically after the set time. Toggle this feature on or off with:  
-  `/lootblare autoClose on/off` or `/lb autoClose on/off`
-
-- **Configuration Commands**: For a full list of configuration options, type:  
-  `/help`
-
-- **Communication**: The addon uses the addon channel to update data about roll time and the current master looter. For example, if the player logs in after the ML has been set, he will automatically ask who the ML is and the ML will answer. Also, the ML will announce that he is the ML on add-on loading. All of this is invisible to the player
-
-### The (moveable) frame in game:
-
-![LootBlare Frame](./lootblareframe.png)
+- MS+1 (WIP)
+  You can mark players in your raid with MS+1 through a table. If someone has some points they will be shown in the roll table.
 
 Changelog:
 
