@@ -1,4 +1,5 @@
-﻿local weird_vibes_mode = true
+﻿LootBlare = LootBlare or {}
+local weird_vibes_mode = true
 local srRollMessages = {}
 local msRollMessages = {}
 local osRollMessages = {}
@@ -9,16 +10,13 @@ local time_elapsed = 0
 local item_query = 0.5
 local times = 5
 local discover = CreateFrame("GameTooltip", "CustomTooltip1", UIParent, "GameTooltipTemplate")
-local masterLooter = nil
+LootBlare.masterLooter = nil
 local srRollCap = 100
 local msRollCap = 100
 local osRollCap = 99
 local tmogRollCap = 98
 
-local rollBonuses = {
-  ["Martinez"] = { ["Soulseeker"] = 10 },
-  ["Nenapadna"] = { ["Nightslayer Bracelets"] = 15 }
-}
+LootBlare.rollBonuses = LootBlare.rollBonuses or {}
 local currentItem = ""
 local importText = "" -- will hold the imported text
 
@@ -43,7 +41,7 @@ local RAID_CLASS_COLORS = {
 local ADDON_TEXT_COLOR= "FFEDD8BB"
 local DEFAULT_TEXT_COLOR = "FFFFFF00"
 --local SR_TEXT_COLOR = "FFFF0000"
-local SR_TEXT_COLOR = "FFFFFF00"
+local SR_TEXT_COLOR = "FFFF0000"
 local MS_TEXT_COLOR = "FFFFFF00"
 local OS_TEXT_COLOR = "FF00FF00"
 local TM_TEXT_COLOR = "FF00FFFF"
@@ -82,15 +80,25 @@ local function sortRolls()
   end)
 end
 
-local function colorMsg(message)
+local function IsInSRRollMessages(msg)
+    for _, entry in ipairs(srRollMessages) do
+        if msg == entry then
+            return true
+        end
+    end
+    return false
+end
+
+local function colorMsg(message, isSR)
   msg = message.msg
   class = message.class
   _,_,_, message_end = string.find(msg, "(%S+)%s+(.+)")
   classColor = RAID_CLASS_COLORS[class]
   textColor = DEFAULT_TEXT_COLOR
 
-  if string.find(msg, "-"..srRollCap) then
+  if isSR and string.find(msg, "-"..srRollCap) then
     textColor = SR_TEXT_COLOR
+    --print("[DEBUG] SR" .. msg)
   elseif string.find(msg, "-"..msRollCap) then
     textColor = MS_TEXT_COLOR
   elseif string.find(msg, "-"..osRollCap) then
@@ -314,9 +322,9 @@ local function ShowFrame(frame,duration,item)
       time_elapsed = 0
       item_query = 1.5
       times = 3
-      rollMessages = {}
+      --rollMessages = {}
       isRolling = false
-      if FrameAutoClose and not (masterLooter == UnitName("player")) then frame:Hide() end
+      if FrameAutoClose and not (LootBlare.masterLooter == UnitName("player")) then frame:Hide() end
     end
     if times > 0 and item_query < 0 and not CheckItem(item) then
       times = times - 1
@@ -364,25 +372,25 @@ local function UpdateTextArea(frame)
   for i, v in ipairs(srRollMessages) do
     if count >= 5 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v) .. "\n"
+    text = text .. colorMsg(v, true) .. "\n"
     count = count + 1
   end
   for i, v in ipairs(msRollMessages) do
     if count >= 6 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v) .. "\n"
+    text = text .. colorMsg(v, false) .. "\n"
     count = count + 1
   end
   for i, v in ipairs(osRollMessages) do
     if count >= 7 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v) .. "\n"
+    text = text .. colorMsg(v, false) .. "\n"
     count = count + 1
   end
   for i, v in ipairs(tmogRollMessages) do
     if count >= 8 then break end
     colored_msg = v.msg
-    text = text .. colorMsg(v) .. "\n"
+    text = text .. colorMsg(v, false) .. "\n"
     count = count + 1
   end
 
@@ -449,10 +457,10 @@ local function SplitBySemicolon(text)
 end
 
 function LootBlare_ImportData(text)
-  rollBonuses = {} -- Clear the existing table 
+  LootBlare.rollBonuses = {} -- Clear the existing table 
 
   if not text or text == "" then
-    print("[DEBUG]: No text received or text is empty!")
+    DEFAULT_CHAT_FRAME:AddMessage("[LootBlare]  No text received or text is empty! ", 1, 1, 0)
     return
   end
 
@@ -477,16 +485,28 @@ function LootBlare_ImportData(text)
     end
     --print("[DEBUG]: " .. player .. " " .. itemID .. " " .. bonus)
     if player and itemID and bonus then
-      if not rollBonuses[player] then
-        rollBonuses[player] = {}
+      if not LootBlare.rollBonuses[player] then
+        LootBlare.rollBonuses[player] = {}
       end
-      rollBonuses[player][itemID] = bonus
+      LootBlare.rollBonuses[player][itemID] = bonus
       imported = imported + 1
     else
       DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Skipped malformed line: " .. line)
     end
   end
+  LootBlare:SyncRaid()
   --print("[DEBUG]: Import complete.")
+end
+
+local function SplitRollMessage(msg)
+  local _, _, who, roll, minRoll, maxRoll = string.find(msg, "^(%S+)%s+.*%s+(%d+)%s+%((%d+)%-(%d+)%)")
+  local before = who .. " rolls " .. roll
+  local bracket = "("..minRoll.."-"..maxRoll..")"
+  if before and bracket then
+      return before, bracket
+  else
+      return msg, nil -- fallback if no brackets found
+  end
 end
 
 local function HandleChatMessage(event, message, sender)
@@ -500,7 +520,7 @@ local function HandleChatMessage(event, message, sender)
     end
   elseif event == "CHAT_MSG_LOOT" then
     -- Hide frame for masterlooter when loot is awarded
-    if not ItemRollFrame:IsVisible() or masterLooter ~= UnitName("player") then return end
+    if not ItemRollFrame:IsVisible() or LootBlare.masterLooter ~= UnitName("player") then return end
 
     local _,_,who = string.find(message, "^(%a+) receive.? loot:")
     local links = ExtractItemLinksFromMessage(message)
@@ -514,7 +534,8 @@ local function HandleChatMessage(event, message, sender)
   elseif event == "CHAT_MSG_SYSTEM" then
     local _,_, newML = string.find(message, "(%S+) is now the loot master")
     if newML then
-      masterLooter = newML
+      LootBlare.masterLooter = newML
+      LootBlare:SyncRaid()
       playerName = UnitName("player")
       -- if the player is the new master looter, announce the roll time
       if newML == playerName then
@@ -524,7 +545,7 @@ local function HandleChatMessage(event, message, sender)
       --print("[DEBUG] Received message: " .. message)
       --print("[DEBUG] isRolling = " .. tostring(isRolling))
       local _,_,roller, roll, minRoll, maxRoll = string.find(message, "(%S+) rolls (%d+) %((%d+)%-(%d+)%)")
-      -- print("[DEBUG] Parsed roll: roller=" .. tostring(roller) ..
+      --print("[DEBUG] Parsed roll: roller=" .. tostring(roller) ..
       --", roll=" .. tostring(roll) ..
       --", minRoll=" .. tostring(minRoll) ..
       --", maxRoll=" .. tostring(maxRoll))
@@ -533,12 +554,12 @@ local function HandleChatMessage(event, message, sender)
         roll = tonumber(roll)
         rollers[roller] = 1
 
-        if type(rollBonuses[roller]) == "table" then
-          for item, bonus in pairs(rollBonuses[roller]) do
+        if type(LootBlare.rollBonuses[roller]) == "table" then
+          for item, bonus in pairs(LootBlare.rollBonuses[roller]) do
             --print("[DEBUG]: " .. roller .. " -> " .. item .. " = " .. bonus)
           end
         else
-          --print("[DEBUG]: No bonuses found for " .. roller)
+          DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] No bonuses found for " .. roller, 1, 1, 0)
         end
         
 
@@ -549,23 +570,26 @@ local function HandleChatMessage(event, message, sender)
         if itemLink then 
           --print("[DEBUG] itemLink exists:".. itemLink)
           if not itemRollFrame or not itemRollFrame.itemLink then
-            print("[DEBUG] itemRollFrame or itemLink is nil")
+            DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] itemRollFrame or itemLink is nil", 1, 1, 0)
           end
           --print("[DEBUG] currentItem:" .. currentItem)
           if maxRoll == tostring(msRollCap) then
             -- Check if the player's name and item name are in the roll bonuses
-            if currentItem and rollBonuses[roller] and rollBonuses[roller][currentItem] then
+            if currentItem and LootBlare.rollBonuses[roller] and LootBlare.rollBonuses[roller][currentItem] then
               --print("[DEBUG] Bonus found for roller=" .. tostring(roller) ..
               --", itemName=" .. tostring(currentItem) ..
               --" -> bonus=" .. tostring(rollBonuses[roller] and rollBonuses[roller][currentItem]))
-              bonus = tonumber(rollBonuses[roller][currentItem]) or 0
+              bonus = tonumber(LootBlare.rollBonuses[roller][currentItem]) or 0
               roll = roll + bonus
-              msg = msg .. " + " .. bonus .. " = " .. roll -- Append bonus to message for display
+              if bonus > 0 then
+                local part1, part2 = SplitRollMessage(msg)
+                msg = part1 .. " + " .. bonus .. " = " .. roll .. " " .. part2 -- Append bonus to message for display
+              end
             end
           end
         end
         message = { roller = roller, roll = roll, msg = msg, class = class }
-        if maxRoll == tostring(srRollCap) then
+        if LootBlare.rollBonuses[roller] and LootBlare.rollBonuses[roller][currentItem] and maxRoll == tostring(srRollCap) then
           table.insert(srRollMessages, message)
         elseif maxRoll == tostring(msRollCap) then
           table.insert(msRollMessages, message)
@@ -580,7 +604,7 @@ local function HandleChatMessage(event, message, sender)
       end
     end
 
-  elseif event == "CHAT_MSG_RAID_WARNING" and sender == masterLooter then
+  elseif event == "CHAT_MSG_RAID_WARNING" and sender == LootBlare.masterLooter then
     local links = ExtractItemLinksFromMessage(message)
     if tsize(links) == 1 then
       -- interaction with other looting addons
@@ -613,15 +637,16 @@ local function HandleChatMessage(event, message, sender)
 
     -- Someone is asking for the master looter and his roll time
     if message == LB_GET_DATA and IsSenderMasterLooter(UnitName("player")) then
-      masterLooter = UnitName("player")
-      SendAddonMessage(LB_PREFIX, LB_SET_ML .. masterLooter, "RAID")
+      LootBlare.masterLooter = UnitName("player")
+      SendAddonMessage(LB_PREFIX, LB_SET_ML .. LootBlare.masterLooter, "RAID")
       SendAddonMessage(LB_PREFIX, LB_SET_ROLL_TIME .. FrameShownDuration, "RAID")
     end
 
     -- Someone is setting the master looter
     if string.find(message, LB_SET_ML) then
       local _,_, newML = string.find(message, "ML set to (%S+)")
-      masterLooter = newML
+      LootBlare.masterLooter = newML
+      LootBlare:SyncRaid()
     end
     -- Someone is setting the roll time
     if string.find(message, LB_SET_ROLL_TIME) then
@@ -667,7 +692,7 @@ SlashCmdList["LOOTBLARE"] = function(msg)
   elseif msg == "settings" then
     lb_print("Frame shown duration: " .. FrameShownDuration .. " seconds.")
     lb_print("Auto closing: " .. (FrameAutoClose and "on" or "off"))
-    lb_print("Master Looter: " .. (masterLooter or "unknown"))
+    lb_print("Master Looter: " .. (LootBlare.masterLooter or "unknown"))
   elseif msg == "import" then
     LootBlareImportFrame:Show()
   elseif string.find(msg, "time") then
@@ -692,6 +717,26 @@ SlashCmdList["LOOTBLARE"] = function(msg)
       FrameAutoClose = false
     else
       lb_print("Invalid option. Please enter 'on' or 'off'.")
+    end
+  elseif msg == "list" then
+  if not LootBlare or not LootBlare.rollBonuses then
+        DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] rollBonuses table not initialized", 1, 0, 0)
+        return
+    end
+
+    local hasEntries = false
+
+    for player, items in pairs(LootBlare.rollBonuses) do
+        if type(items) == "table" then
+            for itemID, bonus in pairs(items) do
+                hasEntries = true
+                DEFAULT_CHAT_FRAME:AddMessage(string.format("[LootBlare] %s -> ItemID: %s, Bonus: %s", player, tostring(itemID), tostring(bonus)), 1, 1, 0)
+            end
+        end
+    end
+
+    if not hasEntries then
+        DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] rollBonuses table is empty", 1, 0, 0)
     end
   else
   lb_print("Invalid command. Type /lb help for a list of commands.")
