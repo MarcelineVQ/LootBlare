@@ -1,6 +1,5 @@
 local previousRaidMembers = {}
 local PREFIX = "LootBlareKBSync"
-local playerName = UnitName("player") or ""
 
 local function GetRaidMemberNames()
     local names = {}
@@ -13,11 +12,23 @@ local function GetRaidMemberNames()
     return names
 end
 
-local function SendSyncMessage(target)
-    if target == playerName then return end
-    if not LootBlare.masterLooter then return end
-    if tostring(playerName) ~= tostring(LootBlare.masterLooter) then return end
+local function IsSenderMasterLooter(sender)
+  local lootMethod, masterLooterPartyID = GetLootMethod()
+  if lootMethod == "master" and masterLooterPartyID then
+    if masterLooterPartyID == 0 then
+      return sender == UnitName("player")
+    else
+      local senderUID = "party" .. masterLooterPartyID
+      local masterLooterName = UnitName(senderUID)
+      return masterLooterName == sender
+    end
+  end
+  return false
+end
 
+local function SendSyncMessage()
+    if IsSenderMasterLooter(UnitName("player")) == false then return end
+    --DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Sending a sync message", 1, 0, 0)
     if not LootBlare.rollBonuses then
         DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] No rollBonuses to sync", 1, 0, 0)
         return
@@ -53,14 +64,18 @@ local function SendSyncMessage(target)
     -- End signal
     SendAddonMessage(PREFIX, "END", "RAID")
 end
+
 -- Sync with entire raid group
 function LootBlare:SyncRaid()
+    if IsSenderMasterLooter(UnitName("player")) == false then return end
+    DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] ML Syncing with raid.")
     local currentRaidMembers = GetRaidMemberNames()
-
     for name in pairs(currentRaidMembers) do
-        SendSyncMessage(name)
+        if name ~= UnitName("player") then
+            SendSyncMessage()
+        end
     end
-
+    SendAddonMessage(PREFIX, "ML "..UnitName("player"), "RAID")
     previousRaidMembers = currentRaidMembers
 end
 
@@ -72,7 +87,7 @@ local function OnRaidUpdate()
     for name in pairs(currentRaidMembers) do
         if not previousRaidMembers[name] then
             --DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Raid member joined: " .. name, 0, 1, 0)
-            SendSyncMessage(name)
+            SendSyncMessage()
             someoneJoinedOrLeft = true
         end
     end
@@ -94,6 +109,7 @@ end
 
 
 local function HandleInboundSync(msg, author)
+        --DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Message Received "..msg, 0, 1, 0)
     if string.find(msg, "^START") then
         LootBlare.rollBonuses = {}
         DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Full sync started by " .. author .. ", cleared all bonuses", 1, 1, 0)   
@@ -124,42 +140,64 @@ local function HandleInboundSync(msg, author)
             if not pos then break end
         end
     elseif string.find(msg, "^END") then
-        DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Sync finished from " .. author, 0, 1, 0)
+        --DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Sync finished from " .. author, 0, 1, 0)
+    elseif string.find(msg, "^REQ_SYNC") then
+        LootBlare.SyncRaid()
+    elseif string.find(msg, "^ML") then
+        LootBlare.masterLooter = string.sub(msg, string.len("ML ") + 1)
     else
         -- Unknown sync message
         DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Unknown sync message: " .. msg, 1, 1, 0)
     end
 end
 
+local function RequestSync()
+    if IsSenderMasterLooter(UnitName("player")) then 
+        LootBlare.masterLooter = UnitName("player")
+        return
+    end
+    SendAddonMessage(PREFIX, "REQ_SYNC", "RAID")
+    DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Sending a Sync Request.", 1, 1, 0)
+end
+
 -- Add this function to update the master looter and detect "returning" players
 local function DetectReturns()
+    if IsSenderMasterLooter(UnitName("player")) == false then return end
+    DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] ML detecting Returns.")
     local currentRaidMembers = {}
-    local hasReturningPlayer = false
-
     for i = 1, GetNumRaidMembers() do
-        local name = select(1, GetRaidRosterInfo(i))
-        if name then
+        local name, _, _, _, _, _, _, online = GetRaidRosterInfo(i)
+        if name and online then
             currentRaidMembers[name] = true
-
-            -- Detect if player was missing previously, now back online
-            if previousRaidMembers and not previousRaidMembers[name] and name ~= playerName then
-                hasReturningPlayer = true
+            -- Detect if player was not present before
+            if not previousRaidMembers[name] and name ~= UnitName("player") then
+                --DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Detected returning player: " .. name, 0, 1, 0)
+                LootBlare:SyncRaid()
             end
         end
     end
 
     -- Update previousRaidMembers for next check
     previousRaidMembers = currentRaidMembers
-
-    -- If there is at least one returning player, master looter sends sync to RAID (not individually)
-    if hasReturningPlayer then
-        if LootBlare.masterLooter and playerName == LootBlare.masterLooter then
-            -- Send sync to all raid members
-            LootBlare:SyncRaid()
-            DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] Sync sent to raid due to returning player(s)")
-        end
-    end
 end
+
+
+local function TryRequestSync()
+    if GetNumRaidMembers() > 0 then
+        RequestSync()
+    
+        return true
+    end
+    return false
+end
+
+local delayFrame = CreateFrame("Frame")
+delayFrame:SetScript("OnUpdate", function()
+    if TryRequestSync() then
+        delayFrame:SetScript("OnUpdate", nil)
+    end
+end)
+
 
 
 
@@ -170,13 +208,10 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function()
     if event == "PLAYER_ENTERING_WORLD" then
-        -- Reset previousRaidMembers on login
-        previousRaidMembers = {}
-        DetectReturns()
+        delayFrame:Show()
     elseif event == "RAID_ROSTER_UPDATE" then
         DetectReturns()
         OnRaidUpdate()
-        -- You can still keep your OnRaidUpdate if needed for other logic
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, msg, channel, sender = arg1, arg2, arg3, arg4
         if prefix == PREFIX then

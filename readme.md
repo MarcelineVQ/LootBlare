@@ -1,4 +1,4 @@
-# Loot Blare 1.1.11
+# Loot Blare 1.1.12
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**.
 This is a version edited to fit Kulový Blesk soft reserve system.

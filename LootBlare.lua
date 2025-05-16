@@ -689,6 +689,7 @@ SlashCmdList["LOOTBLARE"] = function(msg)
     lb_print("Type /lb autoClose on/off to enable/disable auto closing the frame after the time has elapsed.")
     lb_print("Type /lb settings to see the current settings.")
     lb_print("Type /lb import to open import window.")
+    lb_print("Type /lb list to print out the SR+ list.")
   elseif msg == "settings" then
     lb_print("Frame shown duration: " .. FrameShownDuration .. " seconds.")
     lb_print("Auto closing: " .. (FrameAutoClose and "on" or "off"))
@@ -719,11 +720,14 @@ SlashCmdList["LOOTBLARE"] = function(msg)
       lb_print("Invalid option. Please enter 'on' or 'off'.")
     end
   elseif msg == "list" then
-  if not LootBlare or not LootBlare.rollBonuses then
-        DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] rollBonuses table not initialized", 1, 0, 0)
-        return
+    if not LootBlare or not LootBlare.rollBonuses then
+          DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] rollBonuses table not initialized", 1, 0, 0)
+          return
     end
-
+    if LootBlare and LootBlare.masterLooter then
+      DEFAULT_CHAT_FRAME:AddMessage("[LootBlare] LootMaster: "..LootBlare.masterLooter, 1, 1, 0)
+    end
+    
     local hasEntries = false
 
     for player, items in pairs(LootBlare.rollBonuses) do
