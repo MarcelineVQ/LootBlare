@@ -8,11 +8,11 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 ### Features:
 #### Soft Reserve + import
   You can import your SR as a CSV file in this format:
-  
+  ```
   Name|Item|Points;
   Name|Item|Points;
   Name|Item|Points
-
+```
 #### Sync between addon users
   Master looter automatically syncs SR list between users using CHAT_MSG_ADDON events. SR list sync happens whenever the sr list is imported, new player joins the raid and player enters the instance. If a user comes 
   online after a disconnect they will automaticaly request a master looter and SR list sync.
