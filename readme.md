@@ -3,15 +3,19 @@
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**.
 This is a version edited to fit Kulový Blesk soft reserve system.
 
-This addon displays a pop-up frame showing items and rolls when a single uncommon+ item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow.
+This addon displays a pop-up frame showing items and rolls when a single uncommon item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow. If the item as soft reserved the roll will have appropriate bonus added to it.
 
 ### Features:
 #### Soft Reserve + import
   You can import your SR as a CSV file in this format:
+  
   Name|Item|Points;
+  Name|Item|Points;
+  Name|Item|Points
 
 #### Sync between addon users
-  Whenever master looter imports a new SR or a new member joins after the SR was uploaded the addon uses a private channel to sync the SR list
+  Master looter automatically syncs SR list between users using CHAT_MSG_ADDON events. SR list sync happens whenever the sr list is imported, new player joins the raid and player enters the instance. If a user comes 
+  online after a disconnect they will automaticaly request a master looter and SR list sync.
 
 #### Soft Reserve distinguishment
   Whenever someone rolls on SR their roll will be distinguished by a different colour
@@ -21,6 +25,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
 Changelog:
 
+- **1.1.12**: Added Disconnect and Master Looter sync requests (User is not present for setting of master loote)
 - **1.1.11**: Added SR list sync, fixed minimap button, distinguished between MS and SR
 - **1.1.10.1**: Added Kulový blesk SR import and bonus point support
 - **1.1.10**: Prevent blare window from closing due to timeout for the Master Looter
