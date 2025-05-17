@@ -1,12 +1,16 @@
 ## Interface: 11200
-## Title: LootBlareKB 1.1.12
+## Title: LootBlareKB 1.1.13
 ## Author: Ehawne, Sivent, Gulolio, Martinez
-## Version: 1.1.12
+## Version: 1.1.13
 ## Notes: Make loot rolls obvious
-## SavedVariables:FrameShownDuration, FrameAutoClose
+## SavedVariables:FrameShownDuration, FrameAutoClose, LootBlareSaved
 
+
+LootBlareMSPlusFrame.xml
+LootBlareImportFrame.xml
 
 LootBlare.lua
 LootBlareSync.lua
 LootBlareMinimap.lua
-LootBlareImportFrame.xml
+LootBlareMSPlus.lua
+

@@ -98,7 +98,7 @@
             </Scripts>
         </Button>
     </Frames>
-            <Scripts>
+        <Scripts>
             <OnLoad>
                 this:RegisterForDrag("LeftButton");
                 this:SetMovable(1);
