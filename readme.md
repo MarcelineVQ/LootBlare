@@ -1,9 +1,9 @@
-# Loot Blare 1.1.12
+# Loot Blare 1.1.13
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**.
 This is a version edited to fit Kulový Blesk soft reserve system.
 
-This addon displays a pop-up frame showing items and rolls when a single uncommon item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow. If the item as soft reserved the roll will have appropriate bonus added to it.
+This addon displays a pop-up frame showing items and rolls when a single uncommon item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow. If the item as soft reserved the roll will have appropriate bonus added to it. It also allows for MS+ points to be allocated by the master looter, which are automatically used in MS rolls.
 
 ### Features:
 #### Soft Reserve + import
@@ -13,6 +13,15 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
   Name|Item|Points;
   Name|Item|Points
 ```
+
+Another option is to use https://raidres.fly.dev CSV format
+
+```
+ID,Item,Boss,Attendee,Class,Specialization,Comment,Date,"Date (GMT)",SR+
+ID,"Item",Boss,Name,Warrior,Arms,,"01/01/2025, 00:00:00","DATE"
+ID,"Item",Boss,Name,Warlock,Affliction,,"01/01/2025, 00:00:00","DATE"
+```
+
 #### Sync between addon users
   Master looter automatically syncs SR list between users using CHAT_MSG_ADDON events. SR list sync happens whenever the sr list is imported, new player joins the raid and player enters the instance. If a user comes 
   online after a disconnect they will automaticaly request a master looter and SR list sync.
@@ -25,6 +34,7 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
 Changelog:
 
+- **1.1.13**: Added MS+ support, RaidRes supported import, Advanced Syncing, Data Persistency, SFX, Sync Queue, Various Fixes
 - **1.1.12**: Added Disconnect and Master Looter sync requests (User is not present for setting of master loote)
 - **1.1.11**: Added SR list sync, fixed minimap button, distinguished between MS and SR
 - **1.1.10.1**: Added Kulový blesk SR import and bonus point support
