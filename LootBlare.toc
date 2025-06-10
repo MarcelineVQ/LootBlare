@@ -1,7 +1,7 @@
 ## Interface: 11200
-## Title: LootBlare 1.2.0
+## Title: LootBlare 1.2.1
 ## Author: Ehawne, Sivent, Gulolio
-## Version: 1.2.0
+## Version: 1.2.1
 ## Notes: Make loot rolls obvious
 ## SavedVariables: FrameShownDuration, FrameAutoClose
 
