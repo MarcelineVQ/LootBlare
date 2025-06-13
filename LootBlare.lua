@@ -510,7 +510,7 @@ function itemRollFrame:CHAT_MSG_ADDON(prefix,message,channel,sender)
   -- Someone is setting the master looter
   if string.find(message, LB_SET_ML) then
     local _,_, newML = string.find(message, "ML set to (%S+)")
-    if state.masterLooter and (state.masterLooter ~= newML) then
+    if not state.masterLooter or (state.masterLooter and (state.masterLooter ~= newML)) then
       lb_print("Masterlooter set to |cFF00FF00" .. newML .. "|r")
     end
     state.masterLooter = newML
