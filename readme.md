@@ -1,4 +1,4 @@
-# Loot Blare 1.2.1
+# Loot Blare 1.2.2
 
 This addon displays a pop-up frame showing items and rolls when a single uncommon+ item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow.
 
