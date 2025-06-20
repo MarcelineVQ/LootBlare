@@ -531,6 +531,7 @@ function itemRollFrame:CHAT_MSG_RAID_WARNING(message,sender)
 end
 
 function itemRollFrame:SendML(masterlooter)
+  if GetLootMethod() ~= "master" then return end
   local chan = GetNumRaidMembers() > 0 and "RAID" or "PARTY"
   -- send the chosen ML
   SendAddonMessage(LB_PREFIX,LB_SET_ML .. masterlooter,chan)
