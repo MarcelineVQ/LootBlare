@@ -439,7 +439,7 @@ local function PlayerIsML()
 end
 
 local pendingRequest, requestDelay = false, 0
-local pendingSet, setDelay, setName = false, 1, ""
+local pendingSet, setDelay, setName = false, 0.5, ""
 local function RequestML(delay)
   pendingRequest = true
   requestDelay   = delay or 3.0
@@ -461,7 +461,7 @@ delayFrame:SetScript("OnUpdate", function()
     setDelay = setDelay - elapsed
     if setDelay<=0 then
       pendingSet = false
-      setDelay = 1
+      setDelay = 0.5
 
       if not state.masterLooter or (state.masterLooter and (state.masterLooter ~= setName)) then
         lb_print("Masterlooter set to |cFF00FF00" .. setName .. "|r")
@@ -531,7 +531,8 @@ function itemRollFrame:CHAT_MSG_RAID_WARNING(message,sender)
 end
 
 function itemRollFrame:SendML(masterlooter)
-  if GetLootMethod() ~= "master" then return end
+  if not masterlooter then return end
+
   local chan = GetNumRaidMembers() > 0 and "RAID" or "PARTY"
   -- send the chosen ML
   SendAddonMessage(LB_PREFIX,LB_SET_ML .. masterlooter,chan)
@@ -541,22 +542,18 @@ function itemRollFrame:SendML(masterlooter)
   end
 end
 
+-- todo why is lootblare sending stale info when I personally change the ML
 function itemRollFrame:CHAT_MSG_ADDON(prefix,message,channel,sender)
   local player = UnitName("player")
 
   -- Someone is asking for the master looter and his roll time
   if message == LB_GET_DATA then
-    local pml = GetMasterLooterInParty()
-    if pml then
-      self:SendML(pml)
-    elseif state.masterLooter then
-      self:SendML(state.masterLooter)
-    end
-    return
+    self:SendML(GetMasterLooterInParty())
   end
 
   -- Someone is setting the master looter
   if string.find(message, LB_SET_ML) then
+    if GetLootMethod() ~= "master" then return end
     local _,_, newML = string.find(message, "ML set to (%S+)")
     if newML then
       pendingSet = true
