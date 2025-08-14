@@ -193,7 +193,7 @@ end
 
 local function CreateItemRollFrame()
   local frame = CreateFrame("Frame", "ItemRollFrame", UIParent)
-  frame:SetWidth(200) -- Adjust size as needed
+  frame:SetWidth(240) -- Adjust size as needed
   frame:SetHeight(220)
   frame:SetPoint("CENTER",UIParent,"CENTER",0,0) -- Position at center of the parent frame
   frame:SetBackdrop({
