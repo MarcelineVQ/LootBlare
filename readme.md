@@ -1,4 +1,4 @@
-# Loot Blare 1.1.10
+# Loot Blare 1.1.10  Golden Moon Edition
 
 Loot Blare is a World of Warcraft addon originally designed **Turtle WoW**.
 
@@ -56,3 +56,5 @@ Contributors:
 * [Siventt](https://github.com/Siventt/LootBlare)
 * [SeguisDumble](https://github.com/SeguisDumble)
 * [Weird Vibes](MarcelineVQ/LootBlare)
+* [Arcangel](Arcangel4367/LootBlare)
+
