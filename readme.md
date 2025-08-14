@@ -40,6 +40,11 @@ Every time the master looter changes, the new master looter announces the roll t
 
 ![LootBlare Frame](./lootblareframe.png)
 
+### Golden Moon Additions:
+
+- Added Guild Rank tracking in the roll tracker
+- Widened roll tracker to compensate for additional information
+
 Changelog:
 
 - **1.1.10**: Prevent blare window from closing due to timeout for the Master Looter
@@ -57,4 +62,5 @@ Contributors:
 * [SeguisDumble](https://github.com/SeguisDumble)
 * [Weird Vibes](MarcelineVQ/LootBlare)
 * [Arcangel](Arcangel4367/LootBlare)
+
 
