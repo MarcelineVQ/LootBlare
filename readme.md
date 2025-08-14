@@ -16,9 +16,10 @@ This addon displays a pop-up frame showing items and rolls when a single uncommo
 
 - **Easy Roll Buttons**: For raiders, the addon provides convenient roll buttons:
 
-  - **SR (Soft Reserve)**: Rolls from 1 to 101.
+  - **MS SR (Main Spec Soft Reserve)**: Rolls from 1 to 101.
   - **MS (Main Spec)**: Rolls from 1 to 100.
-  - **OS (Off Spec)**: Rolls from 1 to 99.
+  - **OS SR (Off Spec Soft Reserve)**: Rolls from 1 to 99.
+  - **OS (Off Spec)**: Rolls from 1 to 98.
   - **TM (Transmog)**: Rolls from 1 to 50.
 
 - **Frame Duration**: By default, the frame stays on screen for `15 seconds` unless a new roll occurs. Adjust this duration with:  
@@ -44,6 +45,7 @@ Every time the master looter changes, the new master looter announces the roll t
 
 - Added Guild Rank tracking in the roll tracker
 - Widened roll tracker to compensate for additional information
+- Rolls are set to Golden Moon loot rules
 
 Changelog:
 
@@ -62,5 +64,6 @@ Contributors:
 * [SeguisDumble](https://github.com/SeguisDumble)
 * [Weird Vibes](MarcelineVQ/LootBlare)
 * [Arcangel](Arcangel4367/LootBlare)
+
 
 
