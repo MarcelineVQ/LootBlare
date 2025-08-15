@@ -34,13 +34,18 @@ local RAID_CLASS_COLORS = {
   ["Warlock"] = "FF9482C9",
   ["Paladin"] = "FFF58CBA",
 }
-local ADDON_TEXT_COLOR= "FFEDD8BB"
+local ADDON_TEXT_COLOR = "FFEDD8BB"
 local DEFAULT_TEXT_COLOR = "FFFFFF00"
-local MSSR_Text_Color = "ffff00ff"
+local MSSR_Text_Color = "FFFF00FF"
 local MS_Text_Color = "FFFF0000"
 local OSSR_TEXT_COLOR = "FFFFFF00"
 local OS_TEXT_COLOR = "FF00FF00"
 local TM_TEXT_COLOR = "FF00FFFF"
+
+local CORE_TEXT_COLOR = "FFFF00FF"
+local RAIDER_TEXT_COLOR = "FFFF0000"
+local CASUAL_TEXT_COLOR = "FF00FF00"
+local MEMPUG_TEXT_COLOR = "FF00FFFF"
 
 local LB_PREFIX = "LootBlare"
 local LB_GET_DATA = "get data"
@@ -84,6 +89,7 @@ local function colorMsg(message)
   _,_,_, message_end = string.find(msg, "(%S+)%s+(.+)")
   classColor = RAID_CLASS_COLORS[class]
   textColor = DEFAULT_TEXT_COLOR
+  rankColor = DEFAULT_TEXT_COLOR
 
   if string.find(msg, "-"..MSSRRollCap) then
     textColor = MSSR_Text_Color
@@ -96,8 +102,17 @@ local function colorMsg(message)
   elseif string.find(msg, "-"..tmogRollCap) then
     textColor = TM_TEXT_COLOR
   end
+  if message.rank == "Elara/Leader" or message.rank == "Pandia/Co-GM" or message.rank == "Member of Honor" or message.rank == "Ananke/Officer" or message.rank == "Kalyke/R.Leader" or message.rank == "Sinope/Core" then
+    rankColor = CORE_TEXT_COLOR
+  elseif  message.rank == "Isonoe/Raider" then
+    rankColor = RAIDER_TEXT_COLOR
+  elseif  message.rank == "Himale/Casual" then
+    rankColor = CASUAL_TEXT_COLOR
+  elseif  message.rank == "Non-Guildie" then
+    rankColor = MEMPUG_TEXT_COLOR
+  end
 
-  colored_msg = "".. message.rank .. " |c" .. classColor .. "" .. message.roller .. "|r |c" .. textColor .. message_end .. "|r"
+  colored_msg = "|c".. rankColor .. "" .. message.rank .. " |c" .. classColor .. "" .. message.roller .. "|r |c" .. textColor .. message_end .. "|r"
   return colored_msg
 end
 
@@ -356,7 +371,7 @@ local function GetRankOfRoller(rollerName)
           return rankName -- Return the rank as a string (e.g., Core, Raider, Member)
       end
     end
-    return "none" -- Return nil if the player is not found in the raid
+    return "Non-Guildie" -- Return nil if the player is not found in the raid
 end
 
 local function UpdateTextArea(frame)
