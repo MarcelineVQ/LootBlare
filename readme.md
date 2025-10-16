@@ -1,4 +1,4 @@
-# Loot Blare 1.2.2
+# Loot Blare 1.3.0
 
 This addon displays a pop-up frame showing items and rolls when a single uncommon+ item is linked in Raid Warning. Rolls are automatically sorted by type to streamline the master looter's workflow.
 
@@ -41,6 +41,7 @@ Every time the master looter changes, the new master looter announces the roll t
 
 Changelog:
 
+- **1.3.0**: Removed inconsitent ML sharing process, only ML should be linking items in /rw anyway
 - **1.2.0**: Clearer visual indication of what rolls are being done. Separate display and loot timers.
 - **1.1.11**: Various changes
   - Prevent blare window from closing due to timeout for the Master Looter
